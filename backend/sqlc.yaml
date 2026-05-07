@@ -1,7 +1,9 @@
 version: "2"
 sql:
   - schema: "migrations" # sqlc czyta Twoje pliki .sql od goose!
-    queries: "internal/auth/queries.sql"
+    queries:
+      - "internal/auth/queries.sql"
+      - "internal/notes/queries.sql"
     engine: "postgresql"
     gen:
       go:

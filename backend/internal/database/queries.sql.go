@@ -7,7 +7,83 @@ package database
 
 import (
 	"context"
+
+	"github.com/jackc/pgx/v5/pgtype"
 )
+
+const countNotesByUser = `-- name: CountNotesByUser :one
+SELECT COUNT(*) FROM notes WHERE user_id = $1
+`
+
+func (q *Queries) CountNotesByUser(ctx context.Context, userID pgtype.UUID) (int64, error) {
+	row := q.db.QueryRow(ctx, countNotesByUser, userID)
+	var count int64
+	err := row.Scan(&count)
+	return count, err
+}
+
+const createNote = `-- name: CreateNote :one
+INSERT INTO notes (user_id, title, content)
+VALUES ($1, $2, $3)
+RETURNING id, user_id, title, content, created_at, updated_at
+`
+
+type CreateNoteParams struct {
+	UserID  pgtype.UUID
+	Title   string
+	Content string
+}
+
+func (q *Queries) CreateNote(ctx context.Context, arg CreateNoteParams) (Note, error) {
+	row := q.db.QueryRow(ctx, createNote, arg.UserID, arg.Title, arg.Content)
+	var i Note
+	err := row.Scan(
+		&i.ID,
+		&i.UserID,
+		&i.Title,
+		&i.Content,
+		&i.CreatedAt,
+		&i.UpdatedAt,
+	)
+	return i, err
+}
+
+const deleteNote = `-- name: DeleteNote :exec
+DELETE FROM notes WHERE id = $1 AND user_id = $2
+`
+
+type DeleteNoteParams struct {
+	ID     pgtype.UUID
+	UserID pgtype.UUID
+}
+
+func (q *Queries) DeleteNote(ctx context.Context, arg DeleteNoteParams) error {
+	_, err := q.db.Exec(ctx, deleteNote, arg.ID, arg.UserID)
+	return err
+}
+
+const getNoteByID = `-- name: GetNoteByID :one
+SELECT id, user_id, title, content, created_at, updated_at FROM notes WHERE id = $1 AND user_id = $2
+`
+
+type GetNoteByIDParams struct {
+	ID     pgtype.UUID
+	UserID pgtype.UUID
+}
+
+func (q *Queries) GetNoteByID(ctx context.Context, arg GetNoteByIDParams) (Note, error) {
+	row := q.db.QueryRow(ctx, getNoteByID, arg.ID, arg.UserID)
+	var i Note
+	err := row.Scan(
+		&i.ID,
+		&i.UserID,
+		&i.Title,
+		&i.Content,
+		&i.CreatedAt,
+		&i.UpdatedAt,
+	)
+	return i, err
+}
 
 const getUserByUsername = `-- name: GetUserByUsername :one
 SELECT id, username, password_hash, created_at FROM users
@@ -22,6 +98,82 @@ func (q *Queries) GetUserByUsername(ctx context.Context, username string) (User,
 		&i.Username,
 		&i.PasswordHash,
 		&i.CreatedAt,
+	)
+	return i, err
+}
+
+const listNotesByUser = `-- name: ListNotesByUser :many
+SELECT id, user_id, title, content, created_at, updated_at FROM notes
+WHERE user_id = $1
+ORDER BY created_at DESC
+LIMIT $2 OFFSET $3
+`
+
+type ListNotesByUserParams struct {
+	UserID pgtype.UUID
+	Limit  int32
+	Offset int32
+}
+
+func (q *Queries) ListNotesByUser(ctx context.Context, arg ListNotesByUserParams) ([]Note, error) {
+	rows, err := q.db.Query(ctx, listNotesByUser, arg.UserID, arg.Limit, arg.Offset)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []Note
+	for rows.Next() {
+		var i Note
+		if err := rows.Scan(
+			&i.ID,
+			&i.UserID,
+			&i.Title,
+			&i.Content,
+			&i.CreatedAt,
+			&i.UpdatedAt,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const updateNote = `-- name: UpdateNote :one
+UPDATE notes
+SET
+    title      = COALESCE($1, title),
+    content    = COALESCE($2, content),
+    updated_at = (CURRENT_TIMESTAMP AT TIME ZONE 'UTC')
+WHERE id = $3 AND user_id = $4
+RETURNING id, user_id, title, content, created_at, updated_at
+`
+
+type UpdateNoteParams struct {
+	Title   pgtype.Text
+	Content pgtype.Text
+	ID      pgtype.UUID
+	UserID  pgtype.UUID
+}
+
+func (q *Queries) UpdateNote(ctx context.Context, arg UpdateNoteParams) (Note, error) {
+	row := q.db.QueryRow(ctx, updateNote,
+		arg.Title,
+		arg.Content,
+		arg.ID,
+		arg.UserID,
+	)
+	var i Note
+	err := row.Scan(
+		&i.ID,
+		&i.UserID,
+		&i.Title,
+		&i.Content,
+		&i.CreatedAt,
+		&i.UpdatedAt,
 	)
 	return i, err
 }

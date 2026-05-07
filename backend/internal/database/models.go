@@ -8,6 +8,15 @@ import (
 	"github.com/jackc/pgx/v5/pgtype"
 )
 
+type Note struct {
+	ID        pgtype.UUID
+	UserID    pgtype.UUID
+	Title     string
+	Content   string
+	CreatedAt pgtype.Timestamp
+	UpdatedAt pgtype.Timestamp
+}
+
 type User struct {
 	ID           pgtype.UUID
 	Username     string

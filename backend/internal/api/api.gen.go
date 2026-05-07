@@ -9,15 +9,33 @@ import (
 	"context"
 	"encoding/base64"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"net/http"
 	"net/url"
 	"path"
 	"strings"
+	"time"
 
 	"github.com/getkin/kin-openapi/openapi3"
 	"github.com/go-chi/chi/v5"
+	"github.com/oapi-codegen/runtime"
+	openapi_types "github.com/oapi-codegen/runtime/types"
 )
+
+// CreateNoteRequest defines model for CreateNoteRequest.
+type CreateNoteRequest struct {
+	Content string `json:"content"`
+	Title   string `json:"title"`
+}
+
+// ListNotesResponse defines model for ListNotesResponse.
+type ListNotesResponse struct {
+	Items []Note `json:"items"`
+	Limit int    `json:"limit"`
+	Page  int    `json:"page"`
+	Total int    `json:"total"`
+}
 
 // LoginRequest defines model for LoginRequest.
 type LoginRequest struct {
@@ -30,8 +48,36 @@ type MeResponse struct {
 	Username string `json:"username"`
 }
 
+// Note defines model for Note.
+type Note struct {
+	// Content Note body in Markdown format
+	Content   string             `json:"content"`
+	CreatedAt time.Time          `json:"created_at"`
+	Id        openapi_types.UUID `json:"id"`
+	Title     string             `json:"title"`
+	UpdatedAt time.Time          `json:"updated_at"`
+}
+
+// UpdateNoteRequest defines model for UpdateNoteRequest.
+type UpdateNoteRequest struct {
+	Content *string `json:"content,omitempty"`
+	Title   *string `json:"title,omitempty"`
+}
+
+// ListNotesParams defines parameters for ListNotes.
+type ListNotesParams struct {
+	Page  *int `form:"page,omitempty" json:"page,omitempty"`
+	Limit *int `form:"limit,omitempty" json:"limit,omitempty"`
+}
+
 // LoginJSONRequestBody defines body for Login for application/json ContentType.
 type LoginJSONRequestBody = LoginRequest
+
+// CreateNoteJSONRequestBody defines body for CreateNote for application/json ContentType.
+type CreateNoteJSONRequestBody = CreateNoteRequest
+
+// UpdateNoteJSONRequestBody defines body for UpdateNote for application/json ContentType.
+type UpdateNoteJSONRequestBody = UpdateNoteRequest
 
 // ServerInterface represents all server handlers.
 type ServerInterface interface {
@@ -44,6 +90,21 @@ type ServerInterface interface {
 
 	// (GET /auth/me)
 	GetMe(w http.ResponseWriter, r *http.Request)
+
+	// (GET /notes)
+	ListNotes(w http.ResponseWriter, r *http.Request, params ListNotesParams)
+
+	// (POST /notes)
+	CreateNote(w http.ResponseWriter, r *http.Request)
+
+	// (DELETE /notes/{id})
+	DeleteNote(w http.ResponseWriter, r *http.Request, id openapi_types.UUID)
+
+	// (GET /notes/{id})
+	GetNote(w http.ResponseWriter, r *http.Request, id openapi_types.UUID)
+
+	// (PATCH /notes/{id})
+	UpdateNote(w http.ResponseWriter, r *http.Request, id openapi_types.UUID)
 }
 
 // Unimplemented server implementation that returns http.StatusNotImplemented for each endpoint.
@@ -62,6 +123,31 @@ func (_ Unimplemented) Logout(w http.ResponseWriter, r *http.Request) {
 
 // (GET /auth/me)
 func (_ Unimplemented) GetMe(w http.ResponseWriter, r *http.Request) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// (GET /notes)
+func (_ Unimplemented) ListNotes(w http.ResponseWriter, r *http.Request, params ListNotesParams) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// (POST /notes)
+func (_ Unimplemented) CreateNote(w http.ResponseWriter, r *http.Request) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// (DELETE /notes/{id})
+func (_ Unimplemented) DeleteNote(w http.ResponseWriter, r *http.Request, id openapi_types.UUID) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// (GET /notes/{id})
+func (_ Unimplemented) GetNote(w http.ResponseWriter, r *http.Request, id openapi_types.UUID) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// (PATCH /notes/{id})
+func (_ Unimplemented) UpdateNote(w http.ResponseWriter, r *http.Request, id openapi_types.UUID) {
 	w.WriteHeader(http.StatusNotImplemented)
 }
 
@@ -107,6 +193,144 @@ func (siw *ServerInterfaceWrapper) GetMe(w http.ResponseWriter, r *http.Request)
 
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		siw.Handler.GetMe(w, r)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// ListNotes operation middleware
+func (siw *ServerInterfaceWrapper) ListNotes(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params ListNotesParams
+
+	// ------------- Optional query parameter "page" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, false, "page", r.URL.Query(), &params.Page, runtime.BindQueryParameterOptions{Type: "integer", Format: ""})
+	if err != nil {
+		var requiredError *runtime.RequiredParameterError
+		if errors.As(err, &requiredError) {
+			siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "page"})
+		} else {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "page", Err: err})
+		}
+		return
+	}
+
+	// ------------- Optional query parameter "limit" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, false, "limit", r.URL.Query(), &params.Limit, runtime.BindQueryParameterOptions{Type: "integer", Format: ""})
+	if err != nil {
+		var requiredError *runtime.RequiredParameterError
+		if errors.As(err, &requiredError) {
+			siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "limit"})
+		} else {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "limit", Err: err})
+		}
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.ListNotes(w, r, params)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// CreateNote operation middleware
+func (siw *ServerInterfaceWrapper) CreateNote(w http.ResponseWriter, r *http.Request) {
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.CreateNote(w, r)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// DeleteNote operation middleware
+func (siw *ServerInterfaceWrapper) DeleteNote(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "id" -------------
+	var id openapi_types.UUID
+
+	err = runtime.BindStyledParameterWithOptions("simple", "id", chi.URLParam(r, "id"), &id, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid"})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "id", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.DeleteNote(w, r, id)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// GetNote operation middleware
+func (siw *ServerInterfaceWrapper) GetNote(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "id" -------------
+	var id openapi_types.UUID
+
+	err = runtime.BindStyledParameterWithOptions("simple", "id", chi.URLParam(r, "id"), &id, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid"})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "id", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.GetNote(w, r, id)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// UpdateNote operation middleware
+func (siw *ServerInterfaceWrapper) UpdateNote(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "id" -------------
+	var id openapi_types.UUID
+
+	err = runtime.BindStyledParameterWithOptions("simple", "id", chi.URLParam(r, "id"), &id, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid"})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "id", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.UpdateNote(w, r, id)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -238,6 +462,21 @@ func HandlerWithOptions(si ServerInterface, options ChiServerOptions) http.Handl
 	r.Group(func(r chi.Router) {
 		r.Get(options.BaseURL+"/auth/me", wrapper.GetMe)
 	})
+	r.Group(func(r chi.Router) {
+		r.Get(options.BaseURL+"/notes", wrapper.ListNotes)
+	})
+	r.Group(func(r chi.Router) {
+		r.Post(options.BaseURL+"/notes", wrapper.CreateNote)
+	})
+	r.Group(func(r chi.Router) {
+		r.Delete(options.BaseURL+"/notes/{id}", wrapper.DeleteNote)
+	})
+	r.Group(func(r chi.Router) {
+		r.Get(options.BaseURL+"/notes/{id}", wrapper.GetNote)
+	})
+	r.Group(func(r chi.Router) {
+		r.Patch(options.BaseURL+"/notes/{id}", wrapper.UpdateNote)
+	})
 
 	return r
 }
@@ -310,6 +549,191 @@ func (response GetMe401Response) VisitGetMeResponse(w http.ResponseWriter) error
 	return nil
 }
 
+type ListNotesRequestObject struct {
+	Params ListNotesParams
+}
+
+type ListNotesResponseObject interface {
+	VisitListNotesResponse(w http.ResponseWriter) error
+}
+
+type ListNotes200JSONResponse ListNotesResponse
+
+func (response ListNotes200JSONResponse) VisitListNotesResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ListNotes401Response struct {
+}
+
+func (response ListNotes401Response) VisitListNotesResponse(w http.ResponseWriter) error {
+	w.WriteHeader(401)
+	return nil
+}
+
+type CreateNoteRequestObject struct {
+	Body *CreateNoteJSONRequestBody
+}
+
+type CreateNoteResponseObject interface {
+	VisitCreateNoteResponse(w http.ResponseWriter) error
+}
+
+type CreateNote201JSONResponse Note
+
+func (response CreateNote201JSONResponse) VisitCreateNoteResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(201)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type CreateNote400Response struct {
+}
+
+func (response CreateNote400Response) VisitCreateNoteResponse(w http.ResponseWriter) error {
+	w.WriteHeader(400)
+	return nil
+}
+
+type CreateNote401Response struct {
+}
+
+func (response CreateNote401Response) VisitCreateNoteResponse(w http.ResponseWriter) error {
+	w.WriteHeader(401)
+	return nil
+}
+
+type DeleteNoteRequestObject struct {
+	Id openapi_types.UUID `json:"id"`
+}
+
+type DeleteNoteResponseObject interface {
+	VisitDeleteNoteResponse(w http.ResponseWriter) error
+}
+
+type DeleteNote204Response struct {
+}
+
+func (response DeleteNote204Response) VisitDeleteNoteResponse(w http.ResponseWriter) error {
+	w.WriteHeader(204)
+	return nil
+}
+
+type DeleteNote401Response struct {
+}
+
+func (response DeleteNote401Response) VisitDeleteNoteResponse(w http.ResponseWriter) error {
+	w.WriteHeader(401)
+	return nil
+}
+
+type DeleteNote404Response struct {
+}
+
+func (response DeleteNote404Response) VisitDeleteNoteResponse(w http.ResponseWriter) error {
+	w.WriteHeader(404)
+	return nil
+}
+
+type GetNoteRequestObject struct {
+	Id openapi_types.UUID `json:"id"`
+}
+
+type GetNoteResponseObject interface {
+	VisitGetNoteResponse(w http.ResponseWriter) error
+}
+
+type GetNote200JSONResponse Note
+
+func (response GetNote200JSONResponse) VisitGetNoteResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type GetNote401Response struct {
+}
+
+func (response GetNote401Response) VisitGetNoteResponse(w http.ResponseWriter) error {
+	w.WriteHeader(401)
+	return nil
+}
+
+type GetNote404Response struct {
+}
+
+func (response GetNote404Response) VisitGetNoteResponse(w http.ResponseWriter) error {
+	w.WriteHeader(404)
+	return nil
+}
+
+type UpdateNoteRequestObject struct {
+	Id   openapi_types.UUID `json:"id"`
+	Body *UpdateNoteJSONRequestBody
+}
+
+type UpdateNoteResponseObject interface {
+	VisitUpdateNoteResponse(w http.ResponseWriter) error
+}
+
+type UpdateNote200JSONResponse Note
+
+func (response UpdateNote200JSONResponse) VisitUpdateNoteResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type UpdateNote400Response struct {
+}
+
+func (response UpdateNote400Response) VisitUpdateNoteResponse(w http.ResponseWriter) error {
+	w.WriteHeader(400)
+	return nil
+}
+
+type UpdateNote401Response struct {
+}
+
+func (response UpdateNote401Response) VisitUpdateNoteResponse(w http.ResponseWriter) error {
+	w.WriteHeader(401)
+	return nil
+}
+
+type UpdateNote404Response struct {
+}
+
+func (response UpdateNote404Response) VisitUpdateNoteResponse(w http.ResponseWriter) error {
+	w.WriteHeader(404)
+	return nil
+}
+
 // StrictServerInterface represents all server handlers.
 type StrictServerInterface interface {
 
@@ -321,6 +745,21 @@ type StrictServerInterface interface {
 
 	// (GET /auth/me)
 	GetMe(ctx context.Context, request GetMeRequestObject) (GetMeResponseObject, error)
+
+	// (GET /notes)
+	ListNotes(ctx context.Context, request ListNotesRequestObject) (ListNotesResponseObject, error)
+
+	// (POST /notes)
+	CreateNote(ctx context.Context, request CreateNoteRequestObject) (CreateNoteResponseObject, error)
+
+	// (DELETE /notes/{id})
+	DeleteNote(ctx context.Context, request DeleteNoteRequestObject) (DeleteNoteResponseObject, error)
+
+	// (GET /notes/{id})
+	GetNote(ctx context.Context, request GetNoteRequestObject) (GetNoteResponseObject, error)
+
+	// (PATCH /notes/{id})
+	UpdateNote(ctx context.Context, request UpdateNoteRequestObject) (UpdateNoteResponseObject, error)
 }
 
 type StrictHandlerFunc func(ctx context.Context, w http.ResponseWriter, r *http.Request, request any) (any, error)
@@ -431,18 +870,167 @@ func (sh *strictHandler) GetMe(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
+// ListNotes operation middleware
+func (sh *strictHandler) ListNotes(w http.ResponseWriter, r *http.Request, params ListNotesParams) {
+	var request ListNotesRequestObject
+
+	request.Params = params
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.ListNotes(ctx, request.(ListNotesRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "ListNotes")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(ListNotesResponseObject); ok {
+		if err := validResponse.VisitListNotesResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// CreateNote operation middleware
+func (sh *strictHandler) CreateNote(w http.ResponseWriter, r *http.Request) {
+	var request CreateNoteRequestObject
+
+	var body CreateNoteJSONRequestBody
+	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+		sh.options.RequestErrorHandlerFunc(w, r, fmt.Errorf("can't decode JSON body: %w", err))
+		return
+	}
+	request.Body = &body
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.CreateNote(ctx, request.(CreateNoteRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "CreateNote")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(CreateNoteResponseObject); ok {
+		if err := validResponse.VisitCreateNoteResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// DeleteNote operation middleware
+func (sh *strictHandler) DeleteNote(w http.ResponseWriter, r *http.Request, id openapi_types.UUID) {
+	var request DeleteNoteRequestObject
+
+	request.Id = id
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.DeleteNote(ctx, request.(DeleteNoteRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "DeleteNote")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(DeleteNoteResponseObject); ok {
+		if err := validResponse.VisitDeleteNoteResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// GetNote operation middleware
+func (sh *strictHandler) GetNote(w http.ResponseWriter, r *http.Request, id openapi_types.UUID) {
+	var request GetNoteRequestObject
+
+	request.Id = id
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.GetNote(ctx, request.(GetNoteRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "GetNote")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(GetNoteResponseObject); ok {
+		if err := validResponse.VisitGetNoteResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// UpdateNote operation middleware
+func (sh *strictHandler) UpdateNote(w http.ResponseWriter, r *http.Request, id openapi_types.UUID) {
+	var request UpdateNoteRequestObject
+
+	request.Id = id
+
+	var body UpdateNoteJSONRequestBody
+	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+		sh.options.RequestErrorHandlerFunc(w, r, fmt.Errorf("can't decode JSON body: %w", err))
+		return
+	}
+	request.Body = &body
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.UpdateNote(ctx, request.(UpdateNoteRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "UpdateNote")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(UpdateNoteResponseObject); ok {
+		if err := validResponse.VisitUpdateNoteResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
 // Base64 encoded, compressed with deflate, json marshaled OpenAPI spec.
 // Stored as a slice of fixed-width chunks rather than one concatenated
 // const string: with thousands of chunks the chained `+` fold is several
 // times slower for the Go compiler than parsing a slice literal.
 var swaggerSpec = []string{
-	"rFLNbtswDH4Vg9vRiN21J9+2HYZg7TD0OvSgSYyjwiFVkeoQFH73gfK2LEvaw9CTZfET+f3wCTzvEhOS",
-	"CgxPIH6LO1eP1zxGusWHgqL2nzInzBqxVpMT+cE52Fn3CWEA0RxphLmFIpjJ7fBMcW4h40OJGQMM3w7I",
-	"9tDxrv39iL/fo1freIO3KIlJ8JTKf0w7HWHQSBuuTaJOVvvM2TXvv66hhUfMEplggItVv+qNEicklyIM",
-	"cLnqV5dVgW4ro84V3XaTGVjp8uKgkXYamdYBhsVfWAii6AcOewN5JkWqeJfSFH190d0L0yEgO73NuIEB",
-	"3nSHBLtf8XVH2c3HNmguWC8WPyvhd31vn4Dic0y6KL3mccTQRGqkeI8imzJNe5N+1V+cwtf06KYYmiq7",
-	"8RkDkkY3SY1B3SgWgTkDd3bzxyQu+qJLVj/he/UsXy76D+EXxi9bM+KZyZ9QbxDOG/UqIf210zWiYzUf",
-	"S85IOu0bI2pWeqcYGtvhZzP4wnoMPyt+nn8GAAD//w==",
+	"xFZLb9s4EP4rwuwetbac5KTbNgWKoEkQBOipMApGHMtMJVIhh0kNw/+9IKnYlkTl1Ti92ZrhPL5vXmso",
+	"VN0oiZIM5GswxRJr5n+eamSEl4rwGu8sGnIfG60a1CTQqxRKEkovoFWDkIMhLWQJmxRIUIVOUgt5jrKk",
+	"JeSztK+3SUHjnRUaOeTf20fp1vB8+0Dd3GJBzvC5MOSiMtdoGiUNDuMShHX3x78aF5DDP9NdutM216kz",
+	"5iMOnpjWbOX+V6IW+7kJSViidqKGlRiXkCJWxUS9TENkj/qtxUef0bRVKeQoEw0z5kFpHqXCGtSS1RgR",
+	"9qLaaqY7i7FgLnAc/Dd4i7nwrDxVcRxNoUVDQknIvXpyo/gqETK5YPonVw8yWShdM4J0iEnhq5v/YN5W",
+	"q5cDZ4T/kfAIDN4I3tG1VvCY2rbyh0Q0/JVO+1XjHfaapJNMx0kM129efPi27jl2n4RcKG802ICvSrPk",
+	"/6szSOEetQlEzibZJHOeVIOSNQJyOJ5kk2NfkrT0AU6ZpeW0ch3ho1chC5cDc/VwxiEPDQMBPzT0SfFV",
+	"LznWNJUo/IvprVFyNwCfGxmdZtx0WSJt0X8IDeIDPsqyYcmeq7JE7urV2KJAYxa2qvzkOclmQ/Uzec8q",
+	"wROfdlJo5ChJsMoEuFlpXIU4ZGDuvmxBUpaeRMnJB/GejMarLPUCfsJ9GAMlRjx/QbpAiAP1LiTtDSlP",
+	"UTebU6s1SqpWiQvUQVm4tkncUBrl4FJRV30seekW1Gjq2xXmi1qzGgm1M7EGV9FwZ1GvIIUwRh93wy5r",
+	"jgtmK/KdVwspalvvd+HezokbDFsmavEoS6Fmv1qTWfaMg/kB+Rsu+giNV6wU0hNXCUOJWiQB+rcxGN7O",
+	"3YaPdsvuJjrQYBkeXS+aLrN3CyAcQ0Oc/X5t90wANxsfUS0yfh//IRPbZpquBd8EKxWG06DLzWf/veUm",
+	"1lVufex6wK/SLq77DfHMlo8U/snIURLi5a/BwWmOmZOKkoWycqxwx2bt3wMm+5jibEH5GJQbRsVyiPPu",
+	"uPowqN9/Bg0vxJdfOIenuT1vDzaD3l4Vm83mdwAAAP//",
 }
 
 // decodeSpec returns the embedded OpenAPI spec as raw JSON bytes,

@@ -12,14 +12,15 @@ type Handler struct {
 }
 
 func (h *Handler) Login(ctx context.Context, req api.LoginRequestObject) (api.LoginResponseObject, error) {
-	if err := h.Service.Authenticate(ctx, LoginInput{
+	user, err := h.Service.Authenticate(ctx, LoginInput{
 		Username: req.Body.Username,
 		Password: req.Body.Password,
-	}); err != nil {
+	})
+	if err != nil {
 		return api.Login401Response{}, nil
 	}
 
-	token, err := h.Service.SignToken(req.Body.Username)
+	token, err := h.Service.SignToken(req.Body.Username, user.ID.String())
 	if err != nil {
 		return nil, err
 	}
@@ -42,15 +43,13 @@ func (h *Handler) GetMe(ctx context.Context, req api.GetMeRequestObject) (api.Ge
 		return api.GetMe401Response{}, nil
 	}
 
-	username, err := h.Service.VerifyToken(cookie.Value)
+	username, _, err := h.Service.VerifyToken(cookie.Value)
 	if err != nil {
 		return api.GetMe401Response{}, nil
 	}
 
 	return api.GetMe200JSONResponse{Username: username}, nil
 }
-
-var _ api.StrictServerInterface = (*Handler)(nil)
 
 // login200Response sets the session cookie then writes 200.
 type login200Response struct {

@@ -44,6 +44,128 @@ paths:
         "204":
           description: Logged out successfully
 
+  /notes:
+    get:
+      operationId: listNotes
+      tags:
+        - notes
+      parameters:
+        - name: page
+          in: query
+          schema:
+            type: integer
+            minimum: 1
+            default: 1
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+            default: 20
+      responses:
+        "200":
+          description: Paginated list of notes
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ListNotesResponse"
+        "401":
+          description: Not authenticated
+    post:
+      operationId: createNote
+      tags:
+        - notes
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateNoteRequest"
+      responses:
+        "201":
+          description: Note created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Note"
+        "400":
+          description: Invalid request body
+        "401":
+          description: Not authenticated
+
+  /notes/{id}:
+    get:
+      operationId: getNote
+      tags:
+        - notes
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "200":
+          description: Note found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Note"
+        "401":
+          description: Not authenticated
+        "404":
+          description: Note not found
+    patch:
+      operationId: updateNote
+      tags:
+        - notes
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateNoteRequest"
+      responses:
+        "200":
+          description: Note updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Note"
+        "400":
+          description: Invalid request body
+        "401":
+          description: Not authenticated
+        "404":
+          description: Note not found
+    delete:
+      operationId: deleteNote
+      tags:
+        - notes
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "204":
+          description: Note deleted
+        "401":
+          description: Not authenticated
+        "404":
+          description: Note not found
+
 components:
   schemas:
     MeResponse:
@@ -61,3 +183,56 @@ components:
           type: string
         password:
           type: string
+
+    Note:
+      type: object
+      required: [id, title, content, created_at, updated_at]
+      properties:
+        id:
+          type: string
+          format: uuid
+        title:
+          type: string
+        content:
+          type: string
+          description: Note body in Markdown format
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+
+    CreateNoteRequest:
+      type: object
+      required: [title, content]
+      properties:
+        title:
+          type: string
+          minLength: 1
+        content:
+          type: string
+
+    UpdateNoteRequest:
+      type: object
+      properties:
+        title:
+          type: string
+          minLength: 1
+        content:
+          type: string
+
+    ListNotesResponse:
+      type: object
+      required: [items, total, page, limit]
+      properties:
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/Note"
+        total:
+          type: integer
+        page:
+          type: integer
+        limit:
+          type: integer

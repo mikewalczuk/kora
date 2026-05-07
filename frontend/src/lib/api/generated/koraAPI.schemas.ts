@@ -13,3 +13,43 @@ export interface LoginRequest {
   password: string;
 }
 
+export interface Note {
+  id: string;
+  title: string;
+  /** Note body in Markdown format */
+  content: string;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface CreateNoteRequest {
+  /** @minLength 1 */
+  title: string;
+  content: string;
+}
+
+export interface UpdateNoteRequest {
+  /** @minLength 1 */
+  title?: string;
+  content?: string;
+}
+
+export interface ListNotesResponse {
+  items: Note[];
+  total: number;
+  page: number;
+  limit: number;
+}
+
+export type ListNotesParams = {
+/**
+ * @minimum 1
+ */
+page?: number;
+/**
+ * @minimum 1
+ * @maximum 100
+ */
+limit?: number;
+};
+
