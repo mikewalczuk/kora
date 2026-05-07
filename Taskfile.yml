@@ -1,0 +1,82 @@
+version: '3'
+
+tasks:
+  dev:
+    desc: Start backend and frontend dev servers in parallel
+    deps: [dev:be, dev:fe]
+
+  dev:be:
+    desc: Backend — gen + migrate + air (hot reload)
+    dir: backend
+    cmd: make dev
+
+  dev:fe:
+    desc: Frontend — orval gen + Vite dev server
+    dir: frontend
+    deps: [gen:fe]
+    cmd: npm run dev
+
+  gen:
+    desc: Generate all code (Go types + SQL + TS API client)
+    deps: [gen:be, gen:fe]
+
+  gen:be:
+    desc: Generate backend (oapi-codegen + sqlc)
+    dir: backend
+    cmd: make gen
+
+  gen:fe:
+    desc: Generate frontend API client (orval)
+    dir: frontend
+    cmd: npm run gen:api
+
+  test:
+    desc: Run backend integration tests
+    dir: backend
+    cmd: go test ./... -v
+
+  build:
+    desc: Build both backend and frontend
+    deps: [build:be, build:fe]
+
+  build:be:
+    dir: backend
+    cmd: make build
+
+  build:fe:
+    dir: frontend
+    cmd: npm run build
+
+  migrate:up:
+    desc: Apply pending DB migrations
+    dir: backend
+    cmd: make migrate-up
+
+  migrate:down:
+    desc: Roll back one migration
+    dir: backend
+    cmd: make migrate-down
+
+  lint:
+    desc: Lint frontend with Biome
+    dir: frontend
+    cmd: npm run lint
+
+  lint:fix:
+    desc: Auto-fix frontend lint issues
+    dir: frontend
+    cmd: npm run lint:fix
+
+  install:
+    desc: Install all tools and dependencies
+    deps: [install:be, install:fe]
+
+  install:be:
+    desc: Install Go CLI tools (goose, oapi-codegen)
+    dir: backend
+    cmd: make install-tools
+
+  install:fe:
+    desc: Install npm dependencies
+    dir: frontend
+    cmd: npm install

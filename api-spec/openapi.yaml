@@ -1,0 +1,63 @@
+openapi: 3.0.3
+info:
+  title: Kora API
+  version: 1.0.0
+paths:
+  /auth/login:
+    post:
+      operationId: login
+      tags:
+        - auth
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/LoginRequest"
+      responses:
+        "200":
+          description: Logged in successfully
+        "401":
+          description: Invalid login credentials
+
+  /auth/me:
+    get:
+      operationId: getMe
+      tags:
+        - auth
+      responses:
+        "200":
+          description: Currently authenticated user
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MeResponse"
+        "401":
+          description: Not authenticated
+
+  /auth/logout:
+    post:
+      operationId: logout
+      tags:
+        - auth
+      responses:
+        "204":
+          description: Logged out successfully
+
+components:
+  schemas:
+    MeResponse:
+      type: object
+      required: [username]
+      properties:
+        username:
+          type: string
+
+    LoginRequest:
+      type: object
+      required: [username, password]
+      properties:
+        username:
+          type: string
+        password:
+          type: string
