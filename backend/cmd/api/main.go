@@ -16,6 +16,7 @@ import (
 	"github.com/impez/kora/internal/auth"
 	"github.com/impez/kora/internal/config"
 	"github.com/impez/kora/internal/database"
+	"github.com/impez/kora/internal/events"
 	"github.com/impez/kora/internal/notes"
 	"github.com/impez/kora/internal/practices"
 	oapimiddleware "github.com/oapi-codegen/nethttp-middleware"
@@ -94,8 +95,9 @@ func main() {
 		AllowedHeaders:   []string{"Accept", "Authorization", "Content-Type"},
 		AllowCredentials: true,
 	}))
-	r.Use(oapimiddleware.OapiRequestValidator(swagger))
-	r.Use(injectRequest)
+
+	hub := events.NewHub()
+	r.Get("/events", hub.ServeHTTP)
 
 	db := database.New(pool)
 	authSvc := &auth.Service{DB: db, JWTSecret: cfg.JWTSecret}
@@ -103,9 +105,14 @@ func main() {
 	srv := &server{
 		auth:      &auth.Handler{Service: authSvc},
 		notes:     &notes.Handler{Service: &notes.Service{DB: db, Auth: authSvc}},
-		practices: &practices.Handler{Service: &practices.Service{}},
+		practices: &practices.Handler{Service: &practices.Service{Hub: hub}},
 	}
-	api.HandlerFromMux(api.NewStrictHandler(srv, nil), r)
+
+	r.Group(func(r chi.Router) {
+		r.Use(oapimiddleware.OapiRequestValidator(swagger))
+		r.Use(injectRequest)
+		api.HandlerFromMux(api.NewStrictHandler(srv, nil), r)
+	})
 
 	addr := fmt.Sprintf(":%d", cfg.Port)
 	slog.Info("server starting", "addr", addr, "log_format", cfg.LogFormat)

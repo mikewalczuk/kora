@@ -26,6 +26,7 @@ import type {
 import type {
   BadRequestResponse,
   CreatePracticeRequest,
+  CreatePracticeResponse,
   NotFoundResponse,
   Practice,
   UnauthorizedResponse
@@ -39,7 +40,7 @@ type SecondParameter<T extends (...args: never) => unknown> = Parameters<T>[1];
 
 
 export type createPracticeResponse201 = {
-  data: Practice
+  data: CreatePracticeResponse
   status: 201
 }
 

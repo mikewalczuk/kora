@@ -35,11 +35,11 @@ collection:
             $ref: '../components/schemas/CreatePracticeRequest.yaml'
     responses:
       "201":
-        description: Practice created
+        description: Practice accepted
         content:
           application/json:
             schema:
-              $ref: '../components/schemas/Practice.yaml'
+              $ref: '../components/schemas/CreatePracticeResponse.yaml'
       "400":
         $ref: '../components/responses/BadRequest.yaml'
       "401":

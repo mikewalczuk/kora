@@ -45,6 +45,10 @@ export interface CreatePracticeRequest {
   noteId: string;
 }
 
+export interface CreatePracticeResponse {
+  id: string;
+}
+
 export type PracticeStatus = typeof PracticeStatus[keyof typeof PracticeStatus];
 
 
@@ -89,6 +93,20 @@ export interface Practice {
   /** @nullable */
   completedAt?: string | null;
 }
+
+export type PracticeReadyEventType = typeof PracticeReadyEventType[keyof typeof PracticeReadyEventType];
+
+
+export const PracticeReadyEventType = {
+  practice_ready: 'practice_ready',
+} as const;
+
+export interface PracticeReadyEvent {
+  type: PracticeReadyEventType;
+  practiceId: string;
+}
+
+export type ServerEvent = PracticeReadyEvent;
 
 /**
  * Not authenticated

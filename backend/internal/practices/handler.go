@@ -12,11 +12,11 @@ type Handler struct {
 }
 
 func (h *Handler) CreatePractice(ctx context.Context, req api.CreatePracticeRequestObject) (api.CreatePracticeResponseObject, error) {
-	practice, err := h.Service.Create(ctx, CreateInput{NoteID: req.Body.NoteId})
+	id, err := h.Service.Create(ctx, CreateInput{NoteID: req.Body.NoteId})
 	if err != nil {
 		return api.CreatePractice401Response{}, nil
 	}
-	return api.CreatePractice201JSONResponse(practice), nil
+	return api.CreatePractice201JSONResponse(api.CreatePracticeResponse{Id: id}), nil
 }
 
 func (h *Handler) GetPractice(ctx context.Context, req api.GetPracticeRequestObject) (api.GetPracticeResponseObject, error) {

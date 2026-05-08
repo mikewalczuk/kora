@@ -1,0 +1,6 @@
+oneOf:
+  - $ref: './PracticeReadyEvent.yaml'
+discriminator:
+  propertyName: type
+  mapping:
+    practice_ready: './PracticeReadyEvent.yaml'

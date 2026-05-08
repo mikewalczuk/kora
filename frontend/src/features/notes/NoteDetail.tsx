@@ -3,6 +3,7 @@ import { useEffect, useState } from "react";
 import { useNote, useDeleteNote, useUpdateNote } from "./api";
 import { useCreatePractice } from "@/features/practices/api";
 
+
 interface Props {
   noteId: string;
 }
@@ -15,12 +16,7 @@ export function NoteDetail({ noteId }: Props) {
   const router = useRouter();
 
   async function handlePractice() {
-    const practice = await createPractice(noteId);
-    router.navigate({
-      to: "/practice/$practiceId",
-      params: { practiceId: practice.id },
-      state: { practice } as never,
-    });
+    await createPractice(noteId);
   }
 
   const [title, setTitle] = useState("");

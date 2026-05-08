@@ -1,0 +1,12 @@
+type: object
+required:
+  - type
+  - practiceId
+properties:
+  type:
+    type: string
+    enum:
+      - practice_ready
+  practiceId:
+    type: string
+    format: uuid

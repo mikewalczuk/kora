@@ -1,5 +1,7 @@
 import { createRootRoute, Outlet, redirect } from '@tanstack/react-router';
 import { getMe } from '@/features/auth/api';
+import { SSEProvider } from '@/lib/sse/SSEProvider';
+import { Toaster } from '@/lib/sse/Toaster';
 
 export const Route = createRootRoute({
   beforeLoad: async ({ location }) => {
@@ -11,8 +13,11 @@ export const Route = createRootRoute({
     }
   },
   component: () => (
-    <div className="min-h-svh">
-      <Outlet />
-    </div>
+    <SSEProvider>
+      <div className="min-h-svh">
+        <Outlet />
+      </div>
+      <Toaster />
+    </SSEProvider>
   ),
 });

@@ -9,11 +9,13 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/impez/kora/internal/api"
+	"github.com/impez/kora/internal/events"
 )
 
 var ErrNotFound = errors.New("practice not found")
 
 type Service struct {
+	Hub   *events.Hub
 	mu    sync.RWMutex
 	store map[uuid.UUID]api.Practice
 }
@@ -22,7 +24,7 @@ type CreateInput struct {
 	NoteID uuid.UUID
 }
 
-func (s *Service) Create(ctx context.Context, in CreateInput) (api.Practice, error) {
+func (s *Service) Create(ctx context.Context, in CreateInput) (uuid.UUID, error) {
 	question := api.MultiQuizQuestion{
 		Id:       uuid.New(),
 		Question: "What is the main concept discussed in this note?",
@@ -58,7 +60,7 @@ func (s *Service) Create(ctx context.Context, in CreateInput) (api.Practice, err
 
 	now := time.Now().UTC()
 	practice := api.Practice{
-		Id:    uuid.New(),
+		Id:     uuid.New(),
 		NoteId: in.NoteID,
 		Status: api.InProgress,
 		Exercises: []api.Exercise{
@@ -76,7 +78,14 @@ func (s *Service) Create(ctx context.Context, in CreateInput) (api.Practice, err
 	s.store[practice.Id] = practice
 	s.mu.Unlock()
 
-	return practice, nil
+	go func() {
+		time.Sleep(5 * time.Second)
+		_ = s.Hub.Broadcast("practice_ready", map[string]any{
+			"practiceId": practice.Id,
+		})
+	}()
+
+	return practice.Id, nil
 }
 
 func (s *Service) Get(ctx context.Context, id uuid.UUID) (api.Practice, error) {
