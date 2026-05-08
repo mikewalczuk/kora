@@ -1,0 +1,13 @@
+type: object
+required: [id, type, questions]
+properties:
+  id:
+    type: string
+    format: uuid
+  type:
+    type: string
+    enum: [multi-quiz]
+  questions:
+    type: array
+    items:
+      $ref: './MultiQuizQuestion.yaml'

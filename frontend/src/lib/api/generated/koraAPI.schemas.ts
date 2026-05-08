@@ -41,6 +41,55 @@ export interface ListNotesResponse {
   limit: number;
 }
 
+export interface CreatePracticeRequest {
+  noteId: string;
+}
+
+export type PracticeStatus = typeof PracticeStatus[keyof typeof PracticeStatus];
+
+
+export const PracticeStatus = {
+  pending: 'pending',
+  in_progress: 'in_progress',
+  completed: 'completed',
+} as const;
+
+export type MultiQuizExerciseType = typeof MultiQuizExerciseType[keyof typeof MultiQuizExerciseType];
+
+
+export const MultiQuizExerciseType = {
+  'multi-quiz': 'multi-quiz',
+} as const;
+
+export type MultiQuizQuestionOptionsItem = {
+  id: string;
+  text: string;
+};
+
+export interface MultiQuizQuestion {
+  id: string;
+  question: string;
+  options: MultiQuizQuestionOptionsItem[];
+}
+
+export interface MultiQuizExercise {
+  id: string;
+  type: MultiQuizExerciseType;
+  questions: MultiQuizQuestion[];
+}
+
+export type Exercise = MultiQuizExercise;
+
+export interface Practice {
+  id: string;
+  noteId: string;
+  status: PracticeStatus;
+  exercises: Exercise[];
+  createdAt: string;
+  /** @nullable */
+  completedAt?: string | null;
+}
+
 /**
  * Not authenticated
  */

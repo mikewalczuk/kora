@@ -1,0 +1,23 @@
+type: object
+required: [id, noteId, status, exercises, createdAt]
+properties:
+  id:
+    type: string
+    format: uuid
+  noteId:
+    type: string
+    format: uuid
+  status:
+    type: string
+    enum: [pending, in_progress, completed]
+  exercises:
+    type: array
+    items:
+      $ref: './Exercise.yaml'
+  createdAt:
+    type: string
+    format: date-time
+  completedAt:
+    type: string
+    format: date-time
+    nullable: true

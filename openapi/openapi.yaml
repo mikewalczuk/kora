@@ -13,6 +13,10 @@ paths:
     $ref: './paths/notes.yaml#/collection'
   /notes/{id}:
     $ref: './paths/notes.yaml#/single'
+  /practices:
+    $ref: './paths/practices.yaml#/collection'
+  /practices/{id}:
+    $ref: './paths/practices.yaml#/single'
 components:
   schemas:
     LoginRequest:
@@ -27,6 +31,16 @@ components:
       $ref: './components/schemas/UpdateNoteRequest.yaml'
     ListNotesResponse:
       $ref: './components/schemas/ListNotesResponse.yaml'
+    CreatePracticeRequest:
+      $ref: './components/schemas/CreatePracticeRequest.yaml'
+    Practice:
+      $ref: './components/schemas/Practice.yaml'
+    Exercise:
+      $ref: './components/schemas/Exercise.yaml'
+    MultiQuizExercise:
+      $ref: './components/schemas/MultiQuizExercise.yaml'
+    MultiQuizQuestion:
+      $ref: './components/schemas/MultiQuizQuestion.yaml'
   responses:
     Unauthorized:
       $ref: './components/responses/Unauthorized.yaml'

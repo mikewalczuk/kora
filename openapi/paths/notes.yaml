@@ -19,13 +19,13 @@ collection:
           default: 20
     responses:
       "200":
-        description: Paginated list of notes
+        description: Paginated list of note
         content:
           application/json:
             schema:
-              $ref: '../components/schemas/ListNotesResponse.yaml'
+              $ref: "../components/schemas/ListNotesResponse.yaml"
       "401":
-        $ref: '../components/responses/Unauthorized.yaml'
+        $ref: "../components/responses/Unauthorized.yaml"
   post:
     operationId: createNote
     tags:
@@ -35,18 +35,18 @@ collection:
       content:
         application/json:
           schema:
-            $ref: '../components/schemas/CreateNoteRequest.yaml'
+            $ref: "../components/schemas/CreateNoteRequest.yaml"
     responses:
       "201":
         description: Note created
         content:
           application/json:
             schema:
-              $ref: '../components/schemas/Note.yaml'
+              $ref: "../components/schemas/Note.yaml"
       "400":
-        $ref: '../components/responses/BadRequest.yaml'
+        $ref: "../components/responses/BadRequest.yaml"
       "401":
-        $ref: '../components/responses/Unauthorized.yaml'
+        $ref: "../components/responses/Unauthorized.yaml"
 
 single:
   get:
@@ -66,11 +66,11 @@ single:
         content:
           application/json:
             schema:
-              $ref: '../components/schemas/Note.yaml'
+              $ref: "../components/schemas/Note.yaml"
       "401":
-        $ref: '../components/responses/Unauthorized.yaml'
+        $ref: "../components/responses/Unauthorized.yaml"
       "404":
-        $ref: '../components/responses/NotFound.yaml'
+        $ref: "../components/responses/NotFound.yaml"
   patch:
     operationId: updateNote
     tags:
@@ -87,20 +87,20 @@ single:
       content:
         application/json:
           schema:
-            $ref: '../components/schemas/UpdateNoteRequest.yaml'
+            $ref: "../components/schemas/UpdateNoteRequest.yaml"
     responses:
       "200":
         description: Note updated
         content:
           application/json:
             schema:
-              $ref: '../components/schemas/Note.yaml'
+              $ref: "../components/schemas/Note.yaml"
       "400":
-        $ref: '../components/responses/BadRequest.yaml'
+        $ref: "../components/responses/BadRequest.yaml"
       "401":
-        $ref: '../components/responses/Unauthorized.yaml'
+        $ref: "../components/responses/Unauthorized.yaml"
       "404":
-        $ref: '../components/responses/NotFound.yaml'
+        $ref: "../components/responses/NotFound.yaml"
   delete:
     operationId: deleteNote
     tags:
@@ -116,6 +116,6 @@ single:
       "204":
         description: Note deleted
       "401":
-        $ref: '../components/responses/Unauthorized.yaml'
+        $ref: "../components/responses/Unauthorized.yaml"
       "404":
-        $ref: '../components/responses/NotFound.yaml'
+        $ref: "../components/responses/NotFound.yaml"

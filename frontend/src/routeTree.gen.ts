@@ -10,12 +10,18 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as PracticePracticeIdRouteImport } from './routes/practice/$practiceId'
 import { Route as NotesNoteIdRouteImport } from './routes/notes/$noteId'
 import { Route as AuthLoginRouteImport } from './routes/auth/login'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const PracticePracticeIdRoute = PracticePracticeIdRouteImport.update({
+  id: '/practice/$practiceId',
+  path: '/practice/$practiceId',
   getParentRoute: () => rootRouteImport,
 } as any)
 const NotesNoteIdRoute = NotesNoteIdRouteImport.update({
@@ -33,30 +39,39 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/auth/login': typeof AuthLoginRoute
   '/notes/$noteId': typeof NotesNoteIdRoute
+  '/practice/$practiceId': typeof PracticePracticeIdRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/auth/login': typeof AuthLoginRoute
   '/notes/$noteId': typeof NotesNoteIdRoute
+  '/practice/$practiceId': typeof PracticePracticeIdRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/auth/login': typeof AuthLoginRoute
   '/notes/$noteId': typeof NotesNoteIdRoute
+  '/practice/$practiceId': typeof PracticePracticeIdRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/auth/login' | '/notes/$noteId'
+  fullPaths: '/' | '/auth/login' | '/notes/$noteId' | '/practice/$practiceId'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/auth/login' | '/notes/$noteId'
-  id: '__root__' | '/' | '/auth/login' | '/notes/$noteId'
+  to: '/' | '/auth/login' | '/notes/$noteId' | '/practice/$practiceId'
+  id:
+    | '__root__'
+    | '/'
+    | '/auth/login'
+    | '/notes/$noteId'
+    | '/practice/$practiceId'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AuthLoginRoute: typeof AuthLoginRoute
   NotesNoteIdRoute: typeof NotesNoteIdRoute
+  PracticePracticeIdRoute: typeof PracticePracticeIdRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -66,6 +81,13 @@ declare module '@tanstack/react-router' {
       path: '/'
       fullPath: '/'
       preLoaderRoute: typeof IndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/practice/$practiceId': {
+      id: '/practice/$practiceId'
+      path: '/practice/$practiceId'
+      fullPath: '/practice/$practiceId'
+      preLoaderRoute: typeof PracticePracticeIdRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/notes/$noteId': {
@@ -89,6 +111,7 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AuthLoginRoute: AuthLoginRoute,
   NotesNoteIdRoute: NotesNoteIdRoute,
+  PracticePracticeIdRoute: PracticePracticeIdRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

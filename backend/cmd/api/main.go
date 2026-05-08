@@ -17,13 +17,15 @@ import (
 	"github.com/impez/kora/internal/config"
 	"github.com/impez/kora/internal/database"
 	"github.com/impez/kora/internal/notes"
+	"github.com/impez/kora/internal/practices"
 	oapimiddleware "github.com/oapi-codegen/nethttp-middleware"
 )
 
 // server satisfies api.StrictServerInterface by delegating to feature handlers.
 type server struct {
-	auth  *auth.Handler
-	notes *notes.Handler
+	auth      *auth.Handler
+	notes     *notes.Handler
+	practices *practices.Handler
 }
 
 var _ api.StrictServerInterface = (*server)(nil)
@@ -51,6 +53,12 @@ func (s *server) UpdateNote(ctx context.Context, req api.UpdateNoteRequestObject
 }
 func (s *server) DeleteNote(ctx context.Context, req api.DeleteNoteRequestObject) (api.DeleteNoteResponseObject, error) {
 	return s.notes.DeleteNote(ctx, req)
+}
+func (s *server) CreatePractice(ctx context.Context, req api.CreatePracticeRequestObject) (api.CreatePracticeResponseObject, error) {
+	return s.practices.CreatePractice(ctx, req)
+}
+func (s *server) GetPractice(ctx context.Context, req api.GetPracticeRequestObject) (api.GetPracticeResponseObject, error) {
+	return s.practices.GetPractice(ctx, req)
 }
 
 func main() {
@@ -93,8 +101,9 @@ func main() {
 	authSvc := &auth.Service{DB: db, JWTSecret: cfg.JWTSecret}
 
 	srv := &server{
-		auth:  &auth.Handler{Service: authSvc},
-		notes: &notes.Handler{Service: &notes.Service{DB: db, Auth: authSvc}},
+		auth:      &auth.Handler{Service: authSvc},
+		notes:     &notes.Handler{Service: &notes.Service{DB: db, Auth: authSvc}},
+		practices: &practices.Handler{Service: &practices.Service{}},
 	}
 	api.HandlerFromMux(api.NewStrictHandler(srv, nil), r)
 

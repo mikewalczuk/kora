@@ -1,0 +1,48 @@
+single:
+  get:
+    operationId: getPractice
+    tags:
+      - practices
+    parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+    responses:
+      "200":
+        description: Practice found
+        content:
+          application/json:
+            schema:
+              $ref: '../components/schemas/Practice.yaml'
+      "401":
+        $ref: '../components/responses/Unauthorized.yaml'
+      "404":
+        $ref: '../components/responses/NotFound.yaml'
+
+collection:
+  post:
+    operationId: createPractice
+    tags:
+      - practices
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            $ref: '../components/schemas/CreatePracticeRequest.yaml'
+    responses:
+      "201":
+        description: Practice created
+        content:
+          application/json:
+            schema:
+              $ref: '../components/schemas/Practice.yaml'
+      "400":
+        $ref: '../components/responses/BadRequest.yaml'
+      "401":
+        $ref: '../components/responses/Unauthorized.yaml'
+      "404":
+        $ref: '../components/responses/NotFound.yaml'
