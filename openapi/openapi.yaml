@@ -1,0 +1,36 @@
+openapi: 3.0.3
+info:
+  title: Kora API
+  version: 1.0.0
+paths:
+  /auth/login:
+    $ref: './paths/auth.yaml#/login'
+  /auth/me:
+    $ref: './paths/auth.yaml#/me'
+  /auth/logout:
+    $ref: './paths/auth.yaml#/logout'
+  /notes:
+    $ref: './paths/notes.yaml#/collection'
+  /notes/{id}:
+    $ref: './paths/notes.yaml#/single'
+components:
+  schemas:
+    LoginRequest:
+      $ref: './components/schemas/LoginRequest.yaml'
+    MeResponse:
+      $ref: './components/schemas/MeResponse.yaml'
+    Note:
+      $ref: './components/schemas/Note.yaml'
+    CreateNoteRequest:
+      $ref: './components/schemas/CreateNoteRequest.yaml'
+    UpdateNoteRequest:
+      $ref: './components/schemas/UpdateNoteRequest.yaml'
+    ListNotesResponse:
+      $ref: './components/schemas/ListNotesResponse.yaml'
+  responses:
+    Unauthorized:
+      $ref: './components/responses/Unauthorized.yaml'
+    NotFound:
+      $ref: './components/responses/NotFound.yaml'
+    BadRequest:
+      $ref: './components/responses/BadRequest.yaml'

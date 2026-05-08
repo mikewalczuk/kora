@@ -481,6 +481,15 @@ func HandlerWithOptions(si ServerInterface, options ChiServerOptions) http.Handl
 	return r
 }
 
+type BadRequestResponse struct {
+}
+
+type NotFoundResponse struct {
+}
+
+type UnauthorizedResponse struct {
+}
+
 type LoginRequestObject struct {
 	Body *LoginJSONRequestBody
 }
@@ -497,8 +506,7 @@ func (response Login200Response) VisitLoginResponse(w http.ResponseWriter) error
 	return nil
 }
 
-type Login401Response struct {
-}
+type Login401Response = UnauthorizedResponse
 
 func (response Login401Response) VisitLoginResponse(w http.ResponseWriter) error {
 	w.WriteHeader(401)
@@ -541,8 +549,7 @@ func (response GetMe200JSONResponse) VisitGetMeResponse(w http.ResponseWriter) e
 	return err
 }
 
-type GetMe401Response struct {
-}
+type GetMe401Response = UnauthorizedResponse
 
 func (response GetMe401Response) VisitGetMeResponse(w http.ResponseWriter) error {
 	w.WriteHeader(401)
@@ -571,8 +578,7 @@ func (response ListNotes200JSONResponse) VisitListNotesResponse(w http.ResponseW
 	return err
 }
 
-type ListNotes401Response struct {
-}
+type ListNotes401Response = UnauthorizedResponse
 
 func (response ListNotes401Response) VisitListNotesResponse(w http.ResponseWriter) error {
 	w.WriteHeader(401)
@@ -601,16 +607,14 @@ func (response CreateNote201JSONResponse) VisitCreateNoteResponse(w http.Respons
 	return err
 }
 
-type CreateNote400Response struct {
-}
+type CreateNote400Response = BadRequestResponse
 
 func (response CreateNote400Response) VisitCreateNoteResponse(w http.ResponseWriter) error {
 	w.WriteHeader(400)
 	return nil
 }
 
-type CreateNote401Response struct {
-}
+type CreateNote401Response = UnauthorizedResponse
 
 func (response CreateNote401Response) VisitCreateNoteResponse(w http.ResponseWriter) error {
 	w.WriteHeader(401)
@@ -633,16 +637,14 @@ func (response DeleteNote204Response) VisitDeleteNoteResponse(w http.ResponseWri
 	return nil
 }
 
-type DeleteNote401Response struct {
-}
+type DeleteNote401Response = UnauthorizedResponse
 
 func (response DeleteNote401Response) VisitDeleteNoteResponse(w http.ResponseWriter) error {
 	w.WriteHeader(401)
 	return nil
 }
 
-type DeleteNote404Response struct {
-}
+type DeleteNote404Response = NotFoundResponse
 
 func (response DeleteNote404Response) VisitDeleteNoteResponse(w http.ResponseWriter) error {
 	w.WriteHeader(404)
@@ -671,16 +673,14 @@ func (response GetNote200JSONResponse) VisitGetNoteResponse(w http.ResponseWrite
 	return err
 }
 
-type GetNote401Response struct {
-}
+type GetNote401Response = UnauthorizedResponse
 
 func (response GetNote401Response) VisitGetNoteResponse(w http.ResponseWriter) error {
 	w.WriteHeader(401)
 	return nil
 }
 
-type GetNote404Response struct {
-}
+type GetNote404Response = NotFoundResponse
 
 func (response GetNote404Response) VisitGetNoteResponse(w http.ResponseWriter) error {
 	w.WriteHeader(404)
@@ -710,24 +710,21 @@ func (response UpdateNote200JSONResponse) VisitUpdateNoteResponse(w http.Respons
 	return err
 }
 
-type UpdateNote400Response struct {
-}
+type UpdateNote400Response = BadRequestResponse
 
 func (response UpdateNote400Response) VisitUpdateNoteResponse(w http.ResponseWriter) error {
 	w.WriteHeader(400)
 	return nil
 }
 
-type UpdateNote401Response struct {
-}
+type UpdateNote401Response = UnauthorizedResponse
 
 func (response UpdateNote401Response) VisitUpdateNoteResponse(w http.ResponseWriter) error {
 	w.WriteHeader(401)
 	return nil
 }
 
-type UpdateNote404Response struct {
-}
+type UpdateNote404Response = NotFoundResponse
 
 func (response UpdateNote404Response) VisitUpdateNoteResponse(w http.ResponseWriter) error {
 	w.WriteHeader(404)
@@ -1017,20 +1014,21 @@ func (sh *strictHandler) UpdateNote(w http.ResponseWriter, r *http.Request, id o
 // const string: with thousands of chunks the chained `+` fold is several
 // times slower for the Go compiler than parsing a slice literal.
 var swaggerSpec = []string{
-	"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",
+	"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",
+	"2rb9NwAA//8=",
 }
 
 // decodeSpec returns the embedded OpenAPI spec as raw JSON bytes,

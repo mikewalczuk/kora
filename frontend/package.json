@@ -9,7 +9,8 @@
     "preview": "vite preview",
     "lint": "biome check .",
     "lint:fix": "biome check --write .",
-    "gen:api": "orval"
+    "gen:api": "orval",
+    "bundle:api": "redocly bundle ../openapi/openapi.yaml -o ../openapi.bundled.yaml"
   },
   "dependencies": {
     "@tanstack/react-query": "^5.100.9",
@@ -25,6 +26,7 @@
     "@types/react": "^19.2.14",
     "@types/react-dom": "^19.2.3",
     "@vitejs/plugin-react": "^6.0.1",
+    "@redocly/cli": "^1.34.0",
     "orval": "^8.9.1",
     "tailwindcss": "^4.2.4",
     "typescript": "~6.0.2",

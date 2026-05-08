@@ -24,10 +24,13 @@ import type {
 } from '@tanstack/react-query';
 
 import type {
+  BadRequestResponse,
   CreateNoteRequest,
   ListNotesParams,
   ListNotesResponse,
+  NotFoundResponse,
   Note,
+  UnauthorizedResponse,
   UpdateNoteRequest
 } from '../koraAPI.schemas';
 
@@ -44,7 +47,7 @@ export type listNotesResponse200 = {
 }
 
 export type listNotesResponse401 = {
-  data: void
+  data: UnauthorizedResponse
   status: 401
 }
 
@@ -94,7 +97,7 @@ export const getListNotesQueryKey = (params?: ListNotesParams,) => {
     }
 
 
-export const getListNotesQueryOptions = <TData = Awaited<ReturnType<typeof listNotes>>, TError = void>(params?: ListNotesParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof listNotes>>, TError, TData>>, request?: SecondParameter<typeof customFetch>}
+export const getListNotesQueryOptions = <TData = Awaited<ReturnType<typeof listNotes>>, TError = UnauthorizedResponse>(params?: ListNotesParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof listNotes>>, TError, TData>>, request?: SecondParameter<typeof customFetch>}
 ) => {
 
 const {query: queryOptions, request: requestOptions} = options ?? {};
@@ -113,10 +116,10 @@ const {query: queryOptions, request: requestOptions} = options ?? {};
 }
 
 export type ListNotesQueryResult = NonNullable<Awaited<ReturnType<typeof listNotes>>>
-export type ListNotesQueryError = void
+export type ListNotesQueryError = UnauthorizedResponse
 
 
-export function useListNotes<TData = Awaited<ReturnType<typeof listNotes>>, TError = void>(
+export function useListNotes<TData = Awaited<ReturnType<typeof listNotes>>, TError = UnauthorizedResponse>(
  params: undefined |  ListNotesParams, options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof listNotes>>, TError, TData>> & Pick<
         DefinedInitialDataOptions<
           Awaited<ReturnType<typeof listNotes>>,
@@ -126,7 +129,7 @@ export function useListNotes<TData = Awaited<ReturnType<typeof listNotes>>, TErr
       >, request?: SecondParameter<typeof customFetch>}
  , queryClient?: QueryClient
   ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
-export function useListNotes<TData = Awaited<ReturnType<typeof listNotes>>, TError = void>(
+export function useListNotes<TData = Awaited<ReturnType<typeof listNotes>>, TError = UnauthorizedResponse>(
  params?: ListNotesParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof listNotes>>, TError, TData>> & Pick<
         UndefinedInitialDataOptions<
           Awaited<ReturnType<typeof listNotes>>,
@@ -136,12 +139,12 @@ export function useListNotes<TData = Awaited<ReturnType<typeof listNotes>>, TErr
       >, request?: SecondParameter<typeof customFetch>}
  , queryClient?: QueryClient
   ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
-export function useListNotes<TData = Awaited<ReturnType<typeof listNotes>>, TError = void>(
+export function useListNotes<TData = Awaited<ReturnType<typeof listNotes>>, TError = UnauthorizedResponse>(
  params?: ListNotesParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof listNotes>>, TError, TData>>, request?: SecondParameter<typeof customFetch>}
  , queryClient?: QueryClient
   ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
 
-export function useListNotes<TData = Awaited<ReturnType<typeof listNotes>>, TError = void>(
+export function useListNotes<TData = Awaited<ReturnType<typeof listNotes>>, TError = UnauthorizedResponse>(
  params?: ListNotesParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof listNotes>>, TError, TData>>, request?: SecondParameter<typeof customFetch>}
  , queryClient?: QueryClient
  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
@@ -164,12 +167,12 @@ export type createNoteResponse201 = {
 }
 
 export type createNoteResponse400 = {
-  data: void
+  data: BadRequestResponse
   status: 400
 }
 
 export type createNoteResponse401 = {
-  data: void
+  data: UnauthorizedResponse
   status: 401
 }
 
@@ -205,7 +208,7 @@ export const createNote = async (createNoteRequest: CreateNoteRequest, options?:
 
 
 
-export const getCreateNoteMutationOptions = <TError = void,
+export const getCreateNoteMutationOptions = <TError = BadRequestResponse | UnauthorizedResponse,
     TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createNote>>, TError,{data: CreateNoteRequest}, TContext>, request?: SecondParameter<typeof customFetch>}
 ): UseMutationOptions<Awaited<ReturnType<typeof createNote>>, TError,{data: CreateNoteRequest}, TContext> => {
 
@@ -234,9 +237,9 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
 
     export type CreateNoteMutationResult = NonNullable<Awaited<ReturnType<typeof createNote>>>
     export type CreateNoteMutationBody = CreateNoteRequest
-    export type CreateNoteMutationError = void
+    export type CreateNoteMutationError = BadRequestResponse | UnauthorizedResponse
 
-    export const useCreateNote = <TError = void,
+    export const useCreateNote = <TError = BadRequestResponse | UnauthorizedResponse,
     TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createNote>>, TError,{data: CreateNoteRequest}, TContext>, request?: SecondParameter<typeof customFetch>}
  , queryClient?: QueryClient): UseMutationResult<
         Awaited<ReturnType<typeof createNote>>,
@@ -252,12 +255,12 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
 }
 
 export type getNoteResponse401 = {
-  data: void
+  data: UnauthorizedResponse
   status: 401
 }
 
 export type getNoteResponse404 = {
-  data: void
+  data: NotFoundResponse
   status: 404
 }
 
@@ -300,7 +303,7 @@ export const getGetNoteQueryKey = (id: string,) => {
     }
 
 
-export const getGetNoteQueryOptions = <TData = Awaited<ReturnType<typeof getNote>>, TError = void>(id: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getNote>>, TError, TData>>, request?: SecondParameter<typeof customFetch>}
+export const getGetNoteQueryOptions = <TData = Awaited<ReturnType<typeof getNote>>, TError = UnauthorizedResponse | NotFoundResponse>(id: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getNote>>, TError, TData>>, request?: SecondParameter<typeof customFetch>}
 ) => {
 
 const {query: queryOptions, request: requestOptions} = options ?? {};
@@ -319,10 +322,10 @@ const {query: queryOptions, request: requestOptions} = options ?? {};
 }
 
 export type GetNoteQueryResult = NonNullable<Awaited<ReturnType<typeof getNote>>>
-export type GetNoteQueryError = void
+export type GetNoteQueryError = UnauthorizedResponse | NotFoundResponse
 
 
-export function useGetNote<TData = Awaited<ReturnType<typeof getNote>>, TError = void>(
+export function useGetNote<TData = Awaited<ReturnType<typeof getNote>>, TError = UnauthorizedResponse | NotFoundResponse>(
  id: string, options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof getNote>>, TError, TData>> & Pick<
         DefinedInitialDataOptions<
           Awaited<ReturnType<typeof getNote>>,
@@ -332,7 +335,7 @@ export function useGetNote<TData = Awaited<ReturnType<typeof getNote>>, TError =
       >, request?: SecondParameter<typeof customFetch>}
  , queryClient?: QueryClient
   ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
-export function useGetNote<TData = Awaited<ReturnType<typeof getNote>>, TError = void>(
+export function useGetNote<TData = Awaited<ReturnType<typeof getNote>>, TError = UnauthorizedResponse | NotFoundResponse>(
  id: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getNote>>, TError, TData>> & Pick<
         UndefinedInitialDataOptions<
           Awaited<ReturnType<typeof getNote>>,
@@ -342,12 +345,12 @@ export function useGetNote<TData = Awaited<ReturnType<typeof getNote>>, TError =
       >, request?: SecondParameter<typeof customFetch>}
  , queryClient?: QueryClient
   ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
-export function useGetNote<TData = Awaited<ReturnType<typeof getNote>>, TError = void>(
+export function useGetNote<TData = Awaited<ReturnType<typeof getNote>>, TError = UnauthorizedResponse | NotFoundResponse>(
  id: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getNote>>, TError, TData>>, request?: SecondParameter<typeof customFetch>}
  , queryClient?: QueryClient
   ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
 
-export function useGetNote<TData = Awaited<ReturnType<typeof getNote>>, TError = void>(
+export function useGetNote<TData = Awaited<ReturnType<typeof getNote>>, TError = UnauthorizedResponse | NotFoundResponse>(
  id: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getNote>>, TError, TData>>, request?: SecondParameter<typeof customFetch>}
  , queryClient?: QueryClient
  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
@@ -370,17 +373,17 @@ export type updateNoteResponse200 = {
 }
 
 export type updateNoteResponse400 = {
-  data: void
+  data: BadRequestResponse
   status: 400
 }
 
 export type updateNoteResponse401 = {
-  data: void
+  data: UnauthorizedResponse
   status: 401
 }
 
 export type updateNoteResponse404 = {
-  data: void
+  data: NotFoundResponse
   status: 404
 }
 
@@ -417,7 +420,7 @@ export const updateNote = async (id: string,
 
 
 
-export const getUpdateNoteMutationOptions = <TError = void,
+export const getUpdateNoteMutationOptions = <TError = BadRequestResponse | UnauthorizedResponse | NotFoundResponse,
     TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof updateNote>>, TError,{id: string;data: UpdateNoteRequest}, TContext>, request?: SecondParameter<typeof customFetch>}
 ): UseMutationOptions<Awaited<ReturnType<typeof updateNote>>, TError,{id: string;data: UpdateNoteRequest}, TContext> => {
 
@@ -446,9 +449,9 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
 
     export type UpdateNoteMutationResult = NonNullable<Awaited<ReturnType<typeof updateNote>>>
     export type UpdateNoteMutationBody = UpdateNoteRequest
-    export type UpdateNoteMutationError = void
+    export type UpdateNoteMutationError = BadRequestResponse | UnauthorizedResponse | NotFoundResponse
 
-    export const useUpdateNote = <TError = void,
+    export const useUpdateNote = <TError = BadRequestResponse | UnauthorizedResponse | NotFoundResponse,
     TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof updateNote>>, TError,{id: string;data: UpdateNoteRequest}, TContext>, request?: SecondParameter<typeof customFetch>}
  , queryClient?: QueryClient): UseMutationResult<
         Awaited<ReturnType<typeof updateNote>>,
@@ -464,12 +467,12 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
 }
 
 export type deleteNoteResponse401 = {
-  data: void
+  data: UnauthorizedResponse
   status: 401
 }
 
 export type deleteNoteResponse404 = {
-  data: void
+  data: NotFoundResponse
   status: 404
 }
 
@@ -504,7 +507,7 @@ export const deleteNote = async (id: string, options?: RequestInit): Promise<del
 
 
 
-export const getDeleteNoteMutationOptions = <TError = void,
+export const getDeleteNoteMutationOptions = <TError = UnauthorizedResponse | NotFoundResponse,
     TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof deleteNote>>, TError,{id: string}, TContext>, request?: SecondParameter<typeof customFetch>}
 ): UseMutationOptions<Awaited<ReturnType<typeof deleteNote>>, TError,{id: string}, TContext> => {
 
@@ -533,9 +536,9 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
 
     export type DeleteNoteMutationResult = NonNullable<Awaited<ReturnType<typeof deleteNote>>>
 
-    export type DeleteNoteMutationError = void
+    export type DeleteNoteMutationError = UnauthorizedResponse | NotFoundResponse
 
-    export const useDeleteNote = <TError = void,
+    export const useDeleteNote = <TError = UnauthorizedResponse | NotFoundResponse,
     TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof deleteNote>>, TError,{id: string}, TContext>, request?: SecondParameter<typeof customFetch>}
  , queryClient?: QueryClient): UseMutationResult<
         Awaited<ReturnType<typeof deleteNote>>,

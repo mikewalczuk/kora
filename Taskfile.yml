@@ -16,17 +16,24 @@ tasks:
     deps: [gen:fe]
     cmd: npm run dev
 
+  bundle:
+    desc: Bundle split OpenAPI spec into openapi.bundled.yaml
+    dir: frontend
+    cmd: npm run bundle:api
+
   gen:
     desc: Generate all code (Go types + SQL + TS API client)
     deps: [gen:be, gen:fe]
 
   gen:be:
     desc: Generate backend (oapi-codegen + sqlc)
+    deps: [bundle]
     dir: backend
     cmd: make gen
 
   gen:fe:
     desc: Generate frontend API client (orval)
+    deps: [bundle]
     dir: frontend
     cmd: npm run gen:api
 

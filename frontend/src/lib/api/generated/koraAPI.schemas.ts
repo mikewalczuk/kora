@@ -4,13 +4,13 @@
  * Kora API
  * OpenAPI spec version: 1.0.0
  */
-export interface MeResponse {
-  username: string;
-}
-
 export interface LoginRequest {
   username: string;
   password: string;
+}
+
+export interface MeResponse {
+  username: string;
 }
 
 export interface Note {
@@ -40,6 +40,21 @@ export interface ListNotesResponse {
   page: number;
   limit: number;
 }
+
+/**
+ * Not authenticated
+ */
+export type UnauthorizedResponse = void;
+
+/**
+ * Not found
+ */
+export type NotFoundResponse = void;
+
+/**
+ * Invalid request body
+ */
+export type BadRequestResponse = void;
 
 export type ListNotesParams = {
 /**

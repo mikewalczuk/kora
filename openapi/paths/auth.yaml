@@ -1,0 +1,40 @@
+login:
+  post:
+    operationId: login
+    tags:
+      - auth
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            $ref: '../components/schemas/LoginRequest.yaml'
+    responses:
+      "200":
+        description: Logged in successfully
+      "401":
+        $ref: '../components/responses/Unauthorized.yaml'
+
+me:
+  get:
+    operationId: getMe
+    tags:
+      - auth
+    responses:
+      "200":
+        description: Currently authenticated user
+        content:
+          application/json:
+            schema:
+              $ref: '../components/schemas/MeResponse.yaml'
+      "401":
+        $ref: '../components/responses/Unauthorized.yaml'
+
+logout:
+  post:
+    operationId: logout
+    tags:
+      - auth
+    responses:
+      "204":
+        description: Logged out successfully

@@ -1,7 +1,7 @@
 # Nazwa paczki z wygenerowanym kodem
 API_PACKAGE=api
 # Ścieżka do specyfikacji (relatywna do folderu backend)
-OPENAPI_SPEC=../api-spec/openapi.yaml
+OPENAPI_SPEC=../openapi.bundled.yaml
 # Plik wynikowy
 API_OUT=internal/api/api.gen.go
 GOOSE = $(shell go env GOPATH)/bin/goose
