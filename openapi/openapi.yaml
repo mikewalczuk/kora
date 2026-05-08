@@ -19,6 +19,10 @@ paths:
     $ref: './paths/practices.yaml#/single'
   /practices/{id}/exercises/{exerciseId}:
     $ref: './paths/practices.yaml#/exercise'
+  /concepts/{id}/archive:
+    $ref: './paths/concepts.yaml#/archive'
+  /concepts/{id}/restore:
+    $ref: './paths/concepts.yaml#/restore'
 components:
   schemas:
     LoginRequest:

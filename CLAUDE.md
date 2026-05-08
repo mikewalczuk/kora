@@ -9,7 +9,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## How to work on this project
 
-### 1. Design the API first — edit `api-spec/openapi.yaml`
+### 1. Design the API first — edit `openapi/openapi.yaml`
 
 The OpenAPI spec is the single source of truth. Every endpoint, request body, and response schema lives there. Do not write handler signatures or types by hand — define them in the spec and generate.
 
@@ -153,6 +153,70 @@ This prevents wasted work: the generated interface tells you exactly what signat
 
 ---
 
+## Known caveats & gotchas
+
+### ⚠️ Always bundle before generating
+
+`make gen` in `backend/` uses `openapi.bundled.yaml` — a pre-flattened snapshot. It does **not** re-bundle automatically. If you edit any file under `openapi/`, you must re-bundle first or both oapi-codegen and Orval will see stale types:
+
+```bash
+cd frontend && npm run bundle:api   # rebuild openapi.bundled.yaml
+cd ../backend && make gen           # then regen Go types + sqlc
+npm run gen:api                     # regen TS hooks (also reads bundled file)
+```
+
+Full cross-stack regen sequence: `bundle:api` → `make gen` → `gen:api`.
+
+### ⚠️ `uuid.UUID` serializes as a byte array
+
+`uuid.UUID` in Go is `[16]byte`. Passing it directly to `json.Marshal` or an SSE broadcast produces `[111, 205, 34, …]`, not a UUID string. Always call `.String()`:
+
+```go
+// Wrong — produces a byte array in JSON
+"practiceId": practiceID
+
+// Right
+"practiceId": uuid.UUID(practiceID).String()   // if practiceID is [16]byte
+"practiceId": practiceID.String()              // if already uuid.UUID
+```
+
+### ⚠️ oapi-codegen may skip a 409 if the response body is reused
+
+Referencing `$ref: '../components/responses/Conflict.yaml'` (which has a JSON body) for a second endpoint can silently drop the 409 type. For endpoints that need a no-body 409, define it inline:
+
+```yaml
+"409":
+  description: Already exists
+```
+
+### Transactions with sqlc
+
+`database.Queries` has a `WithTx` helper. Store `*pgxpool.Pool` on the service alongside `*database.Queries`:
+
+```go
+tx, err := s.Pool.Begin(ctx)
+defer tx.Rollback(ctx)
+q := s.DB.WithTx(tx)
+// ... all DB ops via q ...
+tx.Commit(ctx)
+```
+
+### sqlc queries are per-feature but share one output package
+
+All `internal/*/queries.sql` files compile into the single `internal/database` package. A query in `practices/queries.sql` that reads from the `notes` table is fine — sqlc sees all tables from the migrations schema. Add cross-table queries to whichever feature's `queries.sql` needs them.
+
+### AI port/adapter pattern
+
+`internal/ai` is the port (interface + value types only). `mock.go` and `openai.go` are adapters. The interface signature:
+
+```go
+Generate(ctx, noteTitle, noteContent string, existingConcepts []Concept) (GenerateResult, error)
+```
+
+`existingConcepts` carries IDs so the AI can reference them in `ObsoletedConceptIDs`. The mock ignores all inputs. To swap to a real provider, change one line in `main.go`.
+
+---
+
 ## Commands reference
 
 All commands run from `backend/`:
@@ -174,7 +238,7 @@ go test ./internal/auth/... -run TestX  # single test
 ## Architecture overview
 
 ```
-api-spec/openapi.yaml          ← source of truth for the HTTP API
+openapi/openapi.yaml           ← source of truth for the HTTP API (split into paths/ + components/)
 backend/
   cmd/api/main.go              ← wires router, middleware, DB pool, handlers
   internal/

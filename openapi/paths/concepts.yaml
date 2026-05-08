@@ -1,0 +1,39 @@
+archive:
+  post:
+    operationId: archiveConcept
+    tags:
+      - concepts
+    parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+    responses:
+      "204":
+        description: Concept archived
+      "401":
+        $ref: '../components/responses/Unauthorized.yaml'
+      "404":
+        $ref: '../components/responses/NotFound.yaml'
+
+restore:
+  post:
+    operationId: restoreConcept
+    tags:
+      - concepts
+    parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+    responses:
+      "204":
+        description: Concept restored
+      "401":
+        $ref: '../components/responses/Unauthorized.yaml'
+      "404":
+        $ref: '../components/responses/NotFound.yaml'

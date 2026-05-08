@@ -12,6 +12,20 @@ import (
 	"github.com/jackc/pgx/v5/pgtype"
 )
 
+const archiveConcept = `-- name: ArchiveConcept :exec
+UPDATE concepts SET archived_at = NOW(), archived_reason = $1 WHERE id = $2
+`
+
+type ArchiveConceptParams struct {
+	Reason pgtype.Text
+	ID     pgtype.UUID
+}
+
+func (q *Queries) ArchiveConcept(ctx context.Context, arg ArchiveConceptParams) error {
+	_, err := q.db.Exec(ctx, archiveConcept, arg.Reason, arg.ID)
+	return err
+}
+
 const completePractice = `-- name: CompletePractice :one
 UPDATE practices
 SET status = 'completed', completed_at = (CURRENT_TIMESTAMP AT TIME ZONE 'UTC')
@@ -60,6 +74,37 @@ func (q *Queries) CountPractices(ctx context.Context, arg CountPracticesParams) 
 	var count int64
 	err := row.Scan(&count)
 	return count, err
+}
+
+const createConcept = `-- name: CreateConcept :one
+INSERT INTO concepts (note_id, title, content)
+VALUES ($1, $2, $3)
+RETURNING id, note_id, title, content, stability, difficulty, due_at, last_reviewed_at, created_at, archived_at, archived_reason
+`
+
+type CreateConceptParams struct {
+	NoteID  pgtype.UUID
+	Title   string
+	Content string
+}
+
+func (q *Queries) CreateConcept(ctx context.Context, arg CreateConceptParams) (Concept, error) {
+	row := q.db.QueryRow(ctx, createConcept, arg.NoteID, arg.Title, arg.Content)
+	var i Concept
+	err := row.Scan(
+		&i.ID,
+		&i.NoteID,
+		&i.Title,
+		&i.Content,
+		&i.Stability,
+		&i.Difficulty,
+		&i.DueAt,
+		&i.LastReviewedAt,
+		&i.CreatedAt,
+		&i.ArchivedAt,
+		&i.ArchivedReason,
+	)
+	return i, err
 }
 
 const createNote = `-- name: CreateNote :one
@@ -223,6 +268,42 @@ func (q *Queries) GetUserByUsername(ctx context.Context, username string) (User,
 	return i, err
 }
 
+const listActiveConceptsByNote = `-- name: ListActiveConceptsByNote :many
+SELECT id, note_id, title, content, stability, difficulty, due_at, last_reviewed_at, created_at, archived_at, archived_reason FROM concepts WHERE note_id = $1 AND archived_at IS NULL ORDER BY created_at ASC
+`
+
+func (q *Queries) ListActiveConceptsByNote(ctx context.Context, noteID pgtype.UUID) ([]Concept, error) {
+	rows, err := q.db.Query(ctx, listActiveConceptsByNote, noteID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []Concept
+	for rows.Next() {
+		var i Concept
+		if err := rows.Scan(
+			&i.ID,
+			&i.NoteID,
+			&i.Title,
+			&i.Content,
+			&i.Stability,
+			&i.Difficulty,
+			&i.DueAt,
+			&i.LastReviewedAt,
+			&i.CreatedAt,
+			&i.ArchivedAt,
+			&i.ArchivedReason,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const listNotesByUser = `-- name: ListNotesByUser :many
 SELECT id, user_id, title, content, created_at, updated_at FROM notes
 WHERE user_id = $1
@@ -309,6 +390,44 @@ func (q *Queries) ListPractices(ctx context.Context, arg ListPracticesParams) ([
 		return nil, err
 	}
 	return items, nil
+}
+
+const restoreConcept = `-- name: RestoreConcept :exec
+UPDATE concepts SET archived_at = NULL, archived_reason = NULL WHERE id = $1
+`
+
+func (q *Queries) RestoreConcept(ctx context.Context, id pgtype.UUID) error {
+	_, err := q.db.Exec(ctx, restoreConcept, id)
+	return err
+}
+
+const updateConceptContent = `-- name: UpdateConceptContent :one
+UPDATE concepts SET title = $1, content = $2 WHERE id = $3 RETURNING id, note_id, title, content, stability, difficulty, due_at, last_reviewed_at, created_at, archived_at, archived_reason
+`
+
+type UpdateConceptContentParams struct {
+	Title   string
+	Content string
+	ID      pgtype.UUID
+}
+
+func (q *Queries) UpdateConceptContent(ctx context.Context, arg UpdateConceptContentParams) (Concept, error) {
+	row := q.db.QueryRow(ctx, updateConceptContent, arg.Title, arg.Content, arg.ID)
+	var i Concept
+	err := row.Scan(
+		&i.ID,
+		&i.NoteID,
+		&i.Title,
+		&i.Content,
+		&i.Stability,
+		&i.Difficulty,
+		&i.DueAt,
+		&i.LastReviewedAt,
+		&i.CreatedAt,
+		&i.ArchivedAt,
+		&i.ArchivedReason,
+	)
+	return i, err
 }
 
 const updateNote = `-- name: UpdateNote :one

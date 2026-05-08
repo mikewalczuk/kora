@@ -28,6 +28,23 @@ WHERE (sqlc.narg('note_id')::uuid IS NULL OR note_id = sqlc.narg('note_id'))
 -- name: UpdatePracticeExercises :one
 UPDATE practices SET exercises = @exercises WHERE id = @id RETURNING *;
 
+-- name: ListActiveConceptsByNote :many
+SELECT * FROM concepts WHERE note_id = @note_id AND archived_at IS NULL ORDER BY created_at ASC;
+
+-- name: CreateConcept :one
+INSERT INTO concepts (note_id, title, content)
+VALUES (@note_id, @title, @content)
+RETURNING *;
+
+-- name: UpdateConceptContent :one
+UPDATE concepts SET title = @title, content = @content WHERE id = @id RETURNING *;
+
+-- name: ArchiveConcept :exec
+UPDATE concepts SET archived_at = NOW(), archived_reason = @reason WHERE id = @id;
+
+-- name: RestoreConcept :exec
+UPDATE concepts SET archived_at = NULL, archived_reason = NULL WHERE id = @id;
+
 -- name: GetNoteForPractice :one
 SELECT title, content FROM notes WHERE id = @id;
 

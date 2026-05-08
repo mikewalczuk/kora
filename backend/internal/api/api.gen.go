@@ -483,6 +483,12 @@ type ServerInterface interface {
 	// (GET /auth/me)
 	GetMe(w http.ResponseWriter, r *http.Request)
 
+	// (POST /concepts/{id}/archive)
+	ArchiveConcept(w http.ResponseWriter, r *http.Request, id openapi_types.UUID)
+
+	// (POST /concepts/{id}/restore)
+	RestoreConcept(w http.ResponseWriter, r *http.Request, id openapi_types.UUID)
+
 	// (GET /notes)
 	ListNotes(w http.ResponseWriter, r *http.Request, params ListNotesParams)
 
@@ -527,6 +533,16 @@ func (_ Unimplemented) Logout(w http.ResponseWriter, r *http.Request) {
 
 // (GET /auth/me)
 func (_ Unimplemented) GetMe(w http.ResponseWriter, r *http.Request) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// (POST /concepts/{id}/archive)
+func (_ Unimplemented) ArchiveConcept(w http.ResponseWriter, r *http.Request, id openapi_types.UUID) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// (POST /concepts/{id}/restore)
+func (_ Unimplemented) RestoreConcept(w http.ResponseWriter, r *http.Request, id openapi_types.UUID) {
 	w.WriteHeader(http.StatusNotImplemented)
 }
 
@@ -617,6 +633,58 @@ func (siw *ServerInterfaceWrapper) GetMe(w http.ResponseWriter, r *http.Request)
 
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		siw.Handler.GetMe(w, r)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// ArchiveConcept operation middleware
+func (siw *ServerInterfaceWrapper) ArchiveConcept(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "id" -------------
+	var id openapi_types.UUID
+
+	err = runtime.BindStyledParameterWithOptions("simple", "id", chi.URLParam(r, "id"), &id, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid"})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "id", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.ArchiveConcept(w, r, id)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// RestoreConcept operation middleware
+func (siw *ServerInterfaceWrapper) RestoreConcept(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "id" -------------
+	var id openapi_types.UUID
+
+	err = runtime.BindStyledParameterWithOptions("simple", "id", chi.URLParam(r, "id"), &id, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid"})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "id", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.RestoreConcept(w, r, id)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -1034,6 +1102,12 @@ func HandlerWithOptions(si ServerInterface, options ChiServerOptions) http.Handl
 		r.Get(options.BaseURL+"/auth/me", wrapper.GetMe)
 	})
 	r.Group(func(r chi.Router) {
+		r.Post(options.BaseURL+"/concepts/{id}/archive", wrapper.ArchiveConcept)
+	})
+	r.Group(func(r chi.Router) {
+		r.Post(options.BaseURL+"/concepts/{id}/restore", wrapper.RestoreConcept)
+	})
+	r.Group(func(r chi.Router) {
 		r.Get(options.BaseURL+"/notes", wrapper.ListNotes)
 	})
 	r.Group(func(r chi.Router) {
@@ -1138,6 +1212,66 @@ type GetMe401Response = UnauthorizedResponse
 
 func (response GetMe401Response) VisitGetMeResponse(w http.ResponseWriter) error {
 	w.WriteHeader(401)
+	return nil
+}
+
+type ArchiveConceptRequestObject struct {
+	Id openapi_types.UUID `json:"id"`
+}
+
+type ArchiveConceptResponseObject interface {
+	VisitArchiveConceptResponse(w http.ResponseWriter) error
+}
+
+type ArchiveConcept204Response struct {
+}
+
+func (response ArchiveConcept204Response) VisitArchiveConceptResponse(w http.ResponseWriter) error {
+	w.WriteHeader(204)
+	return nil
+}
+
+type ArchiveConcept401Response = UnauthorizedResponse
+
+func (response ArchiveConcept401Response) VisitArchiveConceptResponse(w http.ResponseWriter) error {
+	w.WriteHeader(401)
+	return nil
+}
+
+type ArchiveConcept404Response = NotFoundResponse
+
+func (response ArchiveConcept404Response) VisitArchiveConceptResponse(w http.ResponseWriter) error {
+	w.WriteHeader(404)
+	return nil
+}
+
+type RestoreConceptRequestObject struct {
+	Id openapi_types.UUID `json:"id"`
+}
+
+type RestoreConceptResponseObject interface {
+	VisitRestoreConceptResponse(w http.ResponseWriter) error
+}
+
+type RestoreConcept204Response struct {
+}
+
+func (response RestoreConcept204Response) VisitRestoreConceptResponse(w http.ResponseWriter) error {
+	w.WriteHeader(204)
+	return nil
+}
+
+type RestoreConcept401Response = UnauthorizedResponse
+
+func (response RestoreConcept401Response) VisitRestoreConceptResponse(w http.ResponseWriter) error {
+	w.WriteHeader(401)
+	return nil
+}
+
+type RestoreConcept404Response = NotFoundResponse
+
+func (response RestoreConcept404Response) VisitRestoreConceptResponse(w http.ResponseWriter) error {
+	w.WriteHeader(404)
 	return nil
 }
 
@@ -1504,6 +1638,12 @@ type StrictServerInterface interface {
 	// (GET /auth/me)
 	GetMe(ctx context.Context, request GetMeRequestObject) (GetMeResponseObject, error)
 
+	// (POST /concepts/{id}/archive)
+	ArchiveConcept(ctx context.Context, request ArchiveConceptRequestObject) (ArchiveConceptResponseObject, error)
+
+	// (POST /concepts/{id}/restore)
+	RestoreConcept(ctx context.Context, request RestoreConceptRequestObject) (RestoreConceptResponseObject, error)
+
 	// (GET /notes)
 	ListNotes(ctx context.Context, request ListNotesRequestObject) (ListNotesResponseObject, error)
 
@@ -1633,6 +1773,58 @@ func (sh *strictHandler) GetMe(w http.ResponseWriter, r *http.Request) {
 		sh.options.ResponseErrorHandlerFunc(w, r, err)
 	} else if validResponse, ok := response.(GetMeResponseObject); ok {
 		if err := validResponse.VisitGetMeResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// ArchiveConcept operation middleware
+func (sh *strictHandler) ArchiveConcept(w http.ResponseWriter, r *http.Request, id openapi_types.UUID) {
+	var request ArchiveConceptRequestObject
+
+	request.Id = id
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.ArchiveConcept(ctx, request.(ArchiveConceptRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "ArchiveConcept")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(ArchiveConceptResponseObject); ok {
+		if err := validResponse.VisitArchiveConceptResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// RestoreConcept operation middleware
+func (sh *strictHandler) RestoreConcept(w http.ResponseWriter, r *http.Request, id openapi_types.UUID) {
+	var request RestoreConceptRequestObject
+
+	request.Id = id
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.RestoreConcept(ctx, request.(RestoreConceptRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "RestoreConcept")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(RestoreConceptResponseObject); ok {
+		if err := validResponse.VisitRestoreConceptResponse(w); err != nil {
 			sh.options.ResponseErrorHandlerFunc(w, r, err)
 		}
 	} else if response != nil {
@@ -1904,31 +2096,32 @@ func (sh *strictHandler) SubmitExercise(w http.ResponseWriter, r *http.Request, 
 // const string: with thousands of chunks the chained `+` fold is several
 // times slower for the Go compiler than parsing a slice literal.
 var swaggerSpec = []string{
-	"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",
+	"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",
 }
 
 // decodeSpec returns the embedded OpenAPI spec as raw JSON bytes,

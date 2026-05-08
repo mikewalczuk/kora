@@ -15,6 +15,7 @@ import (
 	"github.com/impez/kora/internal/ai"
 	"github.com/impez/kora/internal/api"
 	"github.com/impez/kora/internal/auth"
+	"github.com/impez/kora/internal/concepts"
 	"github.com/impez/kora/internal/config"
 	"github.com/impez/kora/internal/database"
 	"github.com/impez/kora/internal/events"
@@ -28,6 +29,7 @@ type server struct {
 	auth      *auth.Handler
 	notes     *notes.Handler
 	practices *practices.Handler
+	concepts  *concepts.Handler
 }
 
 var _ api.StrictServerInterface = (*server)(nil)
@@ -67,6 +69,12 @@ func (s *server) GetPractice(ctx context.Context, req api.GetPracticeRequestObje
 }
 func (s *server) SubmitExercise(ctx context.Context, req api.SubmitExerciseRequestObject) (api.SubmitExerciseResponseObject, error) {
 	return s.practices.SubmitExercise(ctx, req)
+}
+func (s *server) ArchiveConcept(ctx context.Context, req api.ArchiveConceptRequestObject) (api.ArchiveConceptResponseObject, error) {
+	return s.concepts.ArchiveConcept(ctx, req)
+}
+func (s *server) RestoreConcept(ctx context.Context, req api.RestoreConceptRequestObject) (api.RestoreConceptResponseObject, error) {
+	return s.concepts.RestoreConcept(ctx, req)
 }
 
 func main() {
@@ -112,7 +120,8 @@ func main() {
 	srv := &server{
 		auth:      &auth.Handler{Service: authSvc},
 		notes:     &notes.Handler{Service: &notes.Service{DB: db, Auth: authSvc}},
-		practices: &practices.Handler{Service: &practices.Service{DB: db, Hub: hub, AI: &ai.MockGenerator{}}},
+		practices: &practices.Handler{Service: &practices.Service{Pool: pool, DB: db, Hub: hub, AI: &ai.MockGenerator{}}},
+		concepts:  &concepts.Handler{Service: &concepts.Service{DB: db}},
 	}
 
 	r.Group(func(r chi.Router) {

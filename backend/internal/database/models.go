@@ -10,6 +10,20 @@ import (
 	"github.com/jackc/pgx/v5/pgtype"
 )
 
+type Concept struct {
+	ID             pgtype.UUID
+	NoteID         pgtype.UUID
+	Title          string
+	Content        string
+	Stability      pgtype.Numeric
+	Difficulty     pgtype.Numeric
+	DueAt          pgtype.Timestamptz
+	LastReviewedAt pgtype.Timestamptz
+	CreatedAt      pgtype.Timestamptz
+	ArchivedAt     pgtype.Timestamptz
+	ArchivedReason pgtype.Text
+}
+
 type Note struct {
 	ID        pgtype.UUID
 	UserID    pgtype.UUID

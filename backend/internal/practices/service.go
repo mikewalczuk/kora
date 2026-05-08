@@ -13,6 +13,7 @@ import (
 	"github.com/impez/kora/internal/events"
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgtype"
+	"github.com/jackc/pgx/v5/pgxpool"
 )
 
 var (
@@ -48,9 +49,10 @@ type dbExercise struct {
 }
 
 type Service struct {
-	DB  *database.Queries
-	Hub *events.Hub
-	AI  ai.Generator
+	Pool *pgxpool.Pool
+	DB   *database.Queries
+	Hub  *events.Hub
+	AI   ai.Generator
 }
 
 type CreateInput struct {
@@ -80,13 +82,22 @@ func (s *Service) Create(ctx context.Context, in CreateInput) (uuid.UUID, error)
 		return uuid.UUID{}, err
 	}
 
-	aiExercises, err := s.AI.GenerateExercises(ctx, note.Title, note.Content)
+	existingRows, err := s.DB.ListActiveConceptsByNote(ctx, noteID)
+	if err != nil {
+		return uuid.UUID{}, err
+	}
+	existingConcepts := make([]ai.Concept, len(existingRows))
+	for i, row := range existingRows {
+		existingConcepts[i] = ai.Concept{ID: row.ID.String(), Title: row.Title, Content: row.Content}
+	}
+
+	generated, err := s.AI.Generate(ctx, note.Title, note.Content, existingConcepts)
 	if err != nil {
 		return uuid.UUID{}, err
 	}
 
-	exercises := make([]dbExercise, len(aiExercises))
-	for i, ex := range aiExercises {
+	exercises := make([]dbExercise, len(generated.Exercises))
+	for i, ex := range generated.Exercises {
 		exercises[i] = aiExerciseToDb(ex)
 	}
 
@@ -95,12 +106,62 @@ func (s *Service) Create(ctx context.Context, in CreateInput) (uuid.UUID, error)
 		return uuid.UUID{}, err
 	}
 
-	row, err := s.DB.CreatePractice(ctx, database.CreatePracticeParams{
+	tx, err := s.Pool.Begin(ctx)
+	if err != nil {
+		return uuid.UUID{}, err
+	}
+	defer tx.Rollback(ctx)
+	q := s.DB.WithTx(tx)
+
+	for _, c := range generated.NewConcepts {
+		_, err := q.CreateConcept(ctx, database.CreateConceptParams{
+			NoteID:  noteID,
+			Title:   c.Title,
+			Content: c.Content,
+		})
+		if err != nil {
+			return uuid.UUID{}, err
+		}
+	}
+
+	for _, c := range generated.UpdatedConcepts {
+		id, err := uuid.Parse(c.ID)
+		if err != nil {
+			continue
+		}
+		_, err = q.UpdateConceptContent(ctx, database.UpdateConceptContentParams{
+			ID:      pgtype.UUID{Bytes: id, Valid: true},
+			Title:   c.Title,
+			Content: c.Content,
+		})
+		if err != nil {
+			return uuid.UUID{}, err
+		}
+	}
+
+	for _, rawID := range generated.ObsoletedConceptIDs {
+		id, err := uuid.Parse(rawID)
+		if err != nil {
+			continue
+		}
+		if err := q.ArchiveConcept(ctx, database.ArchiveConceptParams{
+			ID:     pgtype.UUID{Bytes: id, Valid: true},
+			Reason: pgtype.Text{String: "ai_obsoleted", Valid: true},
+		}); err != nil {
+			return uuid.UUID{}, err
+		}
+	}
+
+	row, err := q.CreatePractice(ctx, database.CreatePracticeParams{
 		NoteID:    noteID,
 		Status:    "in_progress",
 		Exercises: exercisesJSON,
 	})
 	if err != nil {
+		return uuid.UUID{}, err
+	}
+
+	if err := tx.Commit(ctx); err != nil {
 		return uuid.UUID{}, err
 	}
 
