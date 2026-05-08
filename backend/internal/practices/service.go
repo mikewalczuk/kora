@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/google/uuid"
+	"github.com/impez/kora/internal/ai"
 	"github.com/impez/kora/internal/api"
 	"github.com/impez/kora/internal/database"
 	"github.com/impez/kora/internal/events"
@@ -49,6 +50,7 @@ type dbExercise struct {
 type Service struct {
 	DB  *database.Queries
 	Hub *events.Hub
+	AI  ai.Generator
 }
 
 type CreateInput struct {
@@ -73,9 +75,19 @@ func (s *Service) Create(ctx context.Context, in CreateInput) (uuid.UUID, error)
 		return uuid.UUID{}, err
 	}
 
-	exercises := []dbExercise{
-		buildMockExercise("What is the main concept discussed in this note?"),
-		buildMockExercise("Which of the following best summarizes the key takeaway?"),
+	note, err := s.DB.GetNoteForPractice(ctx, noteID)
+	if err != nil {
+		return uuid.UUID{}, err
+	}
+
+	aiExercises, err := s.AI.GenerateExercises(ctx, note.Title, note.Content)
+	if err != nil {
+		return uuid.UUID{}, err
+	}
+
+	exercises := make([]dbExercise, len(aiExercises))
+	for i, ex := range aiExercises {
+		exercises[i] = aiExerciseToDb(ex)
 	}
 
 	exercisesJSON, err := json.Marshal(exercises)
@@ -320,22 +332,23 @@ func allAnswered(exercises []dbExercise) bool {
 	return true
 }
 
-func buildMockExercise(question string) dbExercise {
-	opts := []dbOption{
-		{ID: uuid.New(), Text: "Option A"},
-		{ID: uuid.New(), Text: "Option B"},
-		{ID: uuid.New(), Text: "Option C"},
+func aiExerciseToDb(ex ai.Exercise) dbExercise {
+	questions := make([]dbQuestion, len(ex.Questions))
+	for i, q := range ex.Questions {
+		opts := make([]dbOption, len(q.Options))
+		for j, o := range q.Options {
+			opts[j] = dbOption{ID: uuid.New(), Text: o.Text}
+		}
+		questions[i] = dbQuestion{
+			ID:              uuid.New(),
+			Question:        q.Text,
+			Options:         opts,
+			CorrectOptionID: opts[q.CorrectOptionIdx].ID,
+		}
 	}
 	return dbExercise{
-		ID:   uuid.New(),
-		Type: "multi-quiz",
-		Questions: []dbQuestion{
-			{
-				ID:              uuid.New(),
-				Question:        question,
-				Options:         opts,
-				CorrectOptionID: opts[0].ID,
-			},
-		},
+		ID:        uuid.New(),
+		Type:      "multi-quiz",
+		Questions: questions,
 	}
 }

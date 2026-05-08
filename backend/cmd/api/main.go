@@ -12,6 +12,7 @@ import (
 	"github.com/go-chi/cors"
 	"github.com/jackc/pgx/v5/pgxpool"
 
+	"github.com/impez/kora/internal/ai"
 	"github.com/impez/kora/internal/api"
 	"github.com/impez/kora/internal/auth"
 	"github.com/impez/kora/internal/config"
@@ -111,7 +112,7 @@ func main() {
 	srv := &server{
 		auth:      &auth.Handler{Service: authSvc},
 		notes:     &notes.Handler{Service: &notes.Service{DB: db, Auth: authSvc}},
-		practices: &practices.Handler{Service: &practices.Service{DB: db, Hub: hub}},
+		practices: &practices.Handler{Service: &practices.Service{DB: db, Hub: hub, AI: &ai.MockGenerator{}}},
 	}
 
 	r.Group(func(r chi.Router) {

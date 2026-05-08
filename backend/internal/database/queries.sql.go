@@ -172,6 +172,22 @@ func (q *Queries) GetNoteByID(ctx context.Context, arg GetNoteByIDParams) (Note,
 	return i, err
 }
 
+const getNoteForPractice = `-- name: GetNoteForPractice :one
+SELECT title, content FROM notes WHERE id = $1
+`
+
+type GetNoteForPracticeRow struct {
+	Title   string
+	Content string
+}
+
+func (q *Queries) GetNoteForPractice(ctx context.Context, id pgtype.UUID) (GetNoteForPracticeRow, error) {
+	row := q.db.QueryRow(ctx, getNoteForPractice, id)
+	var i GetNoteForPracticeRow
+	err := row.Scan(&i.Title, &i.Content)
+	return i, err
+}
+
 const getPractice = `-- name: GetPractice :one
 SELECT id, note_id, status, exercises, created_at, completed_at FROM practices WHERE id = $1
 `

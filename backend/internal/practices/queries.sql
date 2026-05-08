@@ -28,6 +28,9 @@ WHERE (sqlc.narg('note_id')::uuid IS NULL OR note_id = sqlc.narg('note_id'))
 -- name: UpdatePracticeExercises :one
 UPDATE practices SET exercises = @exercises WHERE id = @id RETURNING *;
 
+-- name: GetNoteForPractice :one
+SELECT title, content FROM notes WHERE id = @id;
+
 -- name: CompletePractice :one
 UPDATE practices
 SET status = 'completed', completed_at = (CURRENT_TIMESTAMP AT TIME ZONE 'UTC')

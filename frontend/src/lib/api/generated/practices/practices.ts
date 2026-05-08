@@ -395,10 +395,15 @@ export type submitExerciseResponse404 = {
   status: 404
 }
 
+export type submitExerciseResponse409 = {
+  data: void
+  status: 409
+}
+
 export type submitExerciseResponseSuccess = (submitExerciseResponse200) & {
   headers: Headers;
 };
-export type submitExerciseResponseError = (submitExerciseResponse400 | submitExerciseResponse401 | submitExerciseResponse404) & {
+export type submitExerciseResponseError = (submitExerciseResponse400 | submitExerciseResponse401 | submitExerciseResponse404 | submitExerciseResponse409) & {
   headers: Headers;
 };
 
@@ -430,7 +435,7 @@ export const submitExercise = async (id: string,
 
 
 
-export const getSubmitExerciseMutationOptions = <TError = BadRequestResponse | UnauthorizedResponse | NotFoundResponse,
+export const getSubmitExerciseMutationOptions = <TError = BadRequestResponse | UnauthorizedResponse | NotFoundResponse | void,
     TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof submitExercise>>, TError,{id: string;exerciseId: string;data: SubmitExerciseRequest}, TContext>, request?: SecondParameter<typeof customFetch>}
 ): UseMutationOptions<Awaited<ReturnType<typeof submitExercise>>, TError,{id: string;exerciseId: string;data: SubmitExerciseRequest}, TContext> => {
 
@@ -459,9 +464,9 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
 
     export type SubmitExerciseMutationResult = NonNullable<Awaited<ReturnType<typeof submitExercise>>>
     export type SubmitExerciseMutationBody = SubmitExerciseRequest
-    export type SubmitExerciseMutationError = BadRequestResponse | UnauthorizedResponse | NotFoundResponse
+    export type SubmitExerciseMutationError = BadRequestResponse | UnauthorizedResponse | NotFoundResponse | void
 
-    export const useSubmitExercise = <TError = BadRequestResponse | UnauthorizedResponse | NotFoundResponse,
+    export const useSubmitExercise = <TError = BadRequestResponse | UnauthorizedResponse | NotFoundResponse | void,
     TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof submitExercise>>, TError,{id: string;exerciseId: string;data: SubmitExerciseRequest}, TContext>, request?: SecondParameter<typeof customFetch>}
  , queryClient?: QueryClient): UseMutationResult<
         Awaited<ReturnType<typeof submitExercise>>,
