@@ -25,8 +25,11 @@ import type {
 
 import type {
   BadRequestResponse,
+  ConflictResponse,
   CreatePracticeRequest,
   CreatePracticeResponse,
+  ListPracticesParams,
+  ListPracticesResponse,
   NotFoundResponse,
   Practice,
   UnauthorizedResponse
@@ -36,6 +39,126 @@ import { customFetch } from '../../mutator';
 
 
 type SecondParameter<T extends (...args: never) => unknown> = Parameters<T>[1];
+
+
+
+export type listPracticesResponse200 = {
+  data: ListPracticesResponse
+  status: 200
+}
+
+export type listPracticesResponse401 = {
+  data: UnauthorizedResponse
+  status: 401
+}
+
+export type listPracticesResponseSuccess = (listPracticesResponse200) & {
+  headers: Headers;
+};
+export type listPracticesResponseError = (listPracticesResponse401) & {
+  headers: Headers;
+};
+
+export type listPracticesResponse = (listPracticesResponseSuccess | listPracticesResponseError)
+
+export const getListPracticesUrl = (params?: ListPracticesParams,) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : value.toString())
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0 ? `/practices?${stringifiedParams}` : `/practices`
+}
+
+export const listPractices = async (params?: ListPracticesParams, options?: RequestInit): Promise<listPracticesResponse> => {
+
+  return customFetch<listPracticesResponse>(getListPracticesUrl(params),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getListPracticesQueryKey = (params?: ListPracticesParams,) => {
+    return [
+    `/practices`, ...(params ? [params] : [])
+    ] as const;
+    }
+
+
+export const getListPracticesQueryOptions = <TData = Awaited<ReturnType<typeof listPractices>>, TError = UnauthorizedResponse>(params?: ListPracticesParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof listPractices>>, TError, TData>>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getListPracticesQueryKey(params);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof listPractices>>> = ({ signal }) => listPractices(params, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof listPractices>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
+}
+
+export type ListPracticesQueryResult = NonNullable<Awaited<ReturnType<typeof listPractices>>>
+export type ListPracticesQueryError = UnauthorizedResponse
+
+
+export function useListPractices<TData = Awaited<ReturnType<typeof listPractices>>, TError = UnauthorizedResponse>(
+ params: undefined |  ListPracticesParams, options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof listPractices>>, TError, TData>> & Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof listPractices>>,
+          TError,
+          Awaited<ReturnType<typeof listPractices>>
+        > , 'initialData'
+      >, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient
+  ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useListPractices<TData = Awaited<ReturnType<typeof listPractices>>, TError = UnauthorizedResponse>(
+ params?: ListPracticesParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof listPractices>>, TError, TData>> & Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof listPractices>>,
+          TError,
+          Awaited<ReturnType<typeof listPractices>>
+        > , 'initialData'
+      >, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useListPractices<TData = Awaited<ReturnType<typeof listPractices>>, TError = UnauthorizedResponse>(
+ params?: ListPracticesParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof listPractices>>, TError, TData>>, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+
+export function useListPractices<TData = Awaited<ReturnType<typeof listPractices>>, TError = UnauthorizedResponse>(
+ params?: ListPracticesParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof listPractices>>, TError, TData>>, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient
+ ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+
+  const queryOptions = getListPracticesQueryOptions(params,options)
+
+  const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+
+
 
 
 
@@ -54,15 +177,15 @@ export type createPracticeResponse401 = {
   status: 401
 }
 
-export type createPracticeResponse404 = {
-  data: NotFoundResponse
-  status: 404
+export type createPracticeResponse409 = {
+  data: ConflictResponse
+  status: 409
 }
 
 export type createPracticeResponseSuccess = (createPracticeResponse201) & {
   headers: Headers;
 };
-export type createPracticeResponseError = (createPracticeResponse400 | createPracticeResponse401 | createPracticeResponse404) & {
+export type createPracticeResponseError = (createPracticeResponse400 | createPracticeResponse401 | createPracticeResponse409) & {
   headers: Headers;
 };
 
@@ -91,7 +214,7 @@ export const createPractice = async (createPracticeRequest: CreatePracticeReques
 
 
 
-export const getCreatePracticeMutationOptions = <TError = BadRequestResponse | UnauthorizedResponse | NotFoundResponse,
+export const getCreatePracticeMutationOptions = <TError = BadRequestResponse | UnauthorizedResponse | ConflictResponse,
     TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createPractice>>, TError,{data: CreatePracticeRequest}, TContext>, request?: SecondParameter<typeof customFetch>}
 ): UseMutationOptions<Awaited<ReturnType<typeof createPractice>>, TError,{data: CreatePracticeRequest}, TContext> => {
 
@@ -120,9 +243,9 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
 
     export type CreatePracticeMutationResult = NonNullable<Awaited<ReturnType<typeof createPractice>>>
     export type CreatePracticeMutationBody = CreatePracticeRequest
-    export type CreatePracticeMutationError = BadRequestResponse | UnauthorizedResponse | NotFoundResponse
+    export type CreatePracticeMutationError = BadRequestResponse | UnauthorizedResponse | ConflictResponse
 
-    export const useCreatePractice = <TError = BadRequestResponse | UnauthorizedResponse | NotFoundResponse,
+    export const useCreatePractice = <TError = BadRequestResponse | UnauthorizedResponse | ConflictResponse,
     TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createPractice>>, TError,{data: CreatePracticeRequest}, TContext>, request?: SecondParameter<typeof customFetch>}
  , queryClient?: QueryClient): UseMutationResult<
         Awaited<ReturnType<typeof createPractice>>,

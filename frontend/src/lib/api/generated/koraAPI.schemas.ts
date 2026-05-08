@@ -94,6 +94,11 @@ export interface Practice {
   completedAt?: string | null;
 }
 
+export interface ListPracticesResponse {
+  items: Practice[];
+  total: number;
+}
+
 export type PracticeReadyEventType = typeof PracticeReadyEventType[keyof typeof PracticeReadyEventType];
 
 
@@ -123,6 +128,11 @@ export type NotFoundResponse = void;
  */
 export type BadRequestResponse = void;
 
+/**
+ * Conflict — a resource already exists
+ */
+export type ConflictResponse = CreatePracticeResponse;
+
 export type ListNotesParams = {
 /**
  * @minimum 1
@@ -134,4 +144,27 @@ page?: number;
  */
 limit?: number;
 };
+
+export type ListPracticesParams = {
+noteId?: string;
+status?: ListPracticesStatusItem[];
+/**
+ * @minimum 1
+ * @maximum 100
+ */
+limit?: number;
+/**
+ * @minimum 1
+ */
+page?: number;
+};
+
+export type ListPracticesStatusItem = typeof ListPracticesStatusItem[keyof typeof ListPracticesStatusItem];
+
+
+export const ListPracticesStatusItem = {
+  pending: 'pending',
+  in_progress: 'in_progress',
+  completed: 'completed',
+} as const;
 

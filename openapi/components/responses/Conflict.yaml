@@ -1,0 +1,5 @@
+description: Conflict — a resource already exists
+content:
+  application/json:
+    schema:
+      $ref: '../schemas/CreatePracticeResponse.yaml'

@@ -12,7 +12,10 @@ import (
 	"github.com/impez/kora/internal/events"
 )
 
-var ErrNotFound = errors.New("practice not found")
+var (
+	ErrNotFound = errors.New("practice not found")
+	ErrConflict = errors.New("active practice already exists")
+)
 
 type Service struct {
 	Hub   *events.Hub
@@ -24,7 +27,68 @@ type CreateInput struct {
 	NoteID uuid.UUID
 }
 
+type ListInput struct {
+	NoteID *uuid.UUID
+	Status []api.ListPracticesParamsStatus
+	Limit  int
+	Page   int
+}
+
+func (s *Service) List(_ context.Context, in ListInput) (api.ListPracticesResponse, error) {
+	s.mu.RLock()
+	defer s.mu.RUnlock()
+
+	var matches []api.Practice
+	for _, p := range s.store {
+		if in.NoteID != nil && p.NoteId != *in.NoteID {
+			continue
+		}
+		if len(in.Status) > 0 && !statusMatch(in.Status, p.Status) {
+			continue
+		}
+		matches = append(matches, p)
+	}
+
+	total := len(matches)
+	start := (in.Page - 1) * in.Limit
+	if start >= total {
+		matches = nil
+	} else {
+		end := start + in.Limit
+		if end > total {
+			end = total
+		}
+		matches = matches[start:end]
+	}
+	if matches == nil {
+		matches = []api.Practice{}
+	}
+
+	return api.ListPracticesResponse{Items: matches, Total: total}, nil
+}
+
+func statusMatch(filter []api.ListPracticesParamsStatus, s api.PracticeStatus) bool {
+	for _, f := range filter {
+		if string(f) == string(s) {
+			return true
+		}
+	}
+	return false
+}
+
 func (s *Service) Create(ctx context.Context, in CreateInput) (uuid.UUID, error) {
+	s.mu.Lock()
+	if s.store == nil {
+		s.store = make(map[uuid.UUID]api.Practice)
+	}
+	for _, p := range s.store {
+		if p.NoteId == in.NoteID &&
+			(p.Status == api.PracticeStatusInProgress || p.Status == api.PracticeStatusPending) {
+			s.mu.Unlock()
+			return p.Id, ErrConflict
+		}
+	}
+
 	question := api.MultiQuizQuestion{
 		Id:       uuid.New(),
 		Question: "What is the main concept discussed in this note?",
@@ -37,7 +101,6 @@ func (s *Service) Create(ctx context.Context, in CreateInput) (uuid.UUID, error)
 			{Id: uuid.New(), Text: "Option C"},
 		},
 	}
-
 	question2 := api.MultiQuizQuestion{
 		Id:       uuid.New(),
 		Question: "Which of the following best summarizes the key takeaway?",
@@ -62,18 +125,13 @@ func (s *Service) Create(ctx context.Context, in CreateInput) (uuid.UUID, error)
 	practice := api.Practice{
 		Id:     uuid.New(),
 		NoteId: in.NoteID,
-		Status: api.InProgress,
+		Status: api.PracticeStatusInProgress,
 		Exercises: []api.Exercise{
 			toExercise(api.MultiQuizExercise{Id: uuid.New(), Type: api.MultiQuiz, Questions: []api.MultiQuizQuestion{question}}),
 			toExercise(api.MultiQuizExercise{Id: uuid.New(), Type: api.MultiQuiz, Questions: []api.MultiQuizQuestion{question2}}),
 		},
 		CreatedAt:   now,
 		CompletedAt: nil,
-	}
-
-	s.mu.Lock()
-	if s.store == nil {
-		s.store = make(map[uuid.UUID]api.Practice)
 	}
 	s.store[practice.Id] = practice
 	s.mu.Unlock()
@@ -88,7 +146,7 @@ func (s *Service) Create(ctx context.Context, in CreateInput) (uuid.UUID, error)
 	return practice.Id, nil
 }
 
-func (s *Service) Get(ctx context.Context, id uuid.UUID) (api.Practice, error) {
+func (s *Service) Get(_ context.Context, id uuid.UUID) (api.Practice, error) {
 	s.mu.RLock()
 	practice, ok := s.store[id]
 	s.mu.RUnlock()

@@ -1,5 +1,20 @@
-import { useCreatePractice as _useCreatePractice, useGetPractice as _useGetPractice } from "@/lib/api/generated/practices/practices";
-import type { CreatePracticeResponse, Practice } from "@/lib/api/generated/koraAPI.schemas";
+import {
+  useCreatePractice as _useCreatePractice,
+  useGetPractice as _useGetPractice,
+  useListPractices as _useListPractices,
+} from "@/lib/api/generated/practices/practices";
+import type {
+  CreatePracticeResponse,
+  ListPracticesParams,
+  ListPracticesResponse,
+  Practice,
+} from "@/lib/api/generated/koraAPI.schemas";
+
+export function useListPractices(params?: ListPracticesParams) {
+  const { data, isLoading, isError } = _useListPractices(params);
+  const response = data as unknown as ListPracticesResponse | undefined;
+  return { practices: response?.items ?? [], total: response?.total ?? 0, isLoading, isError };
+}
 
 export function useCreatePractice() {
   const { mutateAsync, isPending } = _useCreatePractice();

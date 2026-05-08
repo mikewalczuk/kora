@@ -1,8 +1,8 @@
 import { Link, useRouter } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { useNote, useDeleteNote, useUpdateNote } from "./api";
-import { useCreatePractice } from "@/features/practices/api";
-
+import { useCreatePractice, useListPractices } from "@/features/practices/api";
+import { useSSEEvents } from "@/lib/sse/SSEProvider";
 
 interface Props {
   noteId: string;
@@ -13,10 +13,37 @@ export function NoteDetail({ noteId }: Props) {
   const { deleteNote, isPending: isDeleting } = useDeleteNote();
   const { updateNote, isPending: isSaving } = useUpdateNote();
   const { createPractice, isPending: isPracticing } = useCreatePractice();
+  const { practices } = useListPractices({
+    noteId,
+    status: ["pending", "in_progress"],
+    limit: 1,
+  });
+  const [pendingPracticeId, setPendingPracticeId] = useState<string | null>(null);
+  const [readyPracticeId, setReadyPracticeId] = useState<string | null>(null);
+  const activePracticeId = practices[0]?.id ?? readyPracticeId;
   const router = useRouter();
+  const { on } = useSSEEvents();
+
+  useEffect(() => {
+    if (!pendingPracticeId) return;
+    return on((event) => {
+      if (event.type === "practice_ready" && event.practiceId === pendingPracticeId) {
+        setReadyPracticeId(pendingPracticeId);
+        setPendingPracticeId(null);
+      }
+    });
+  }, [pendingPracticeId, on]);
 
   async function handlePractice() {
-    await createPractice(noteId);
+    try {
+      const { id } = await createPractice(noteId);
+      setPendingPracticeId(id);
+    } catch (err) {
+      if (err instanceof Response && err.status === 409) {
+        const body = await err.json() as { id: string };
+        router.navigate({ to: "/practice/$practiceId", params: { practiceId: body.id } });
+      }
+    }
   }
 
   const [title, setTitle] = useState("");
@@ -62,13 +89,23 @@ export function NoteDetail({ noteId }: Props) {
           >
             {isSaving ? "Saving…" : "Save"}
           </button>
-          <button
-            onClick={handlePractice}
-            disabled={isPracticing}
-            className="text-sm text-violet-600 hover:text-violet-800 disabled:opacity-50"
-          >
-            {isPracticing ? "Creating…" : "Practice"}
-          </button>
+          {activePracticeId ? (
+            <Link
+              to="/practice/$practiceId"
+              params={{ practiceId: activePracticeId }}
+              className="text-sm text-violet-600 hover:text-violet-800"
+            >
+              Continue →
+            </Link>
+          ) : (
+            <button
+              onClick={handlePractice}
+              disabled={isPracticing || !!pendingPracticeId}
+              className="text-sm text-violet-600 hover:text-violet-800 disabled:opacity-50"
+            >
+              {isPracticing ? "Creating…" : pendingPracticeId ? "Preparing…" : "Practice"}
+            </button>
+          )}
           <button
             onClick={handleDelete}
             disabled={isDeleting}

@@ -35,6 +35,8 @@ components:
       $ref: './components/schemas/CreatePracticeRequest.yaml'
     CreatePracticeResponse:
       $ref: './components/schemas/CreatePracticeResponse.yaml'
+    ListPracticesResponse:
+      $ref: './components/schemas/ListPracticesResponse.yaml'
     Practice:
       $ref: './components/schemas/Practice.yaml'
     Exercise:
@@ -54,3 +56,5 @@ components:
       $ref: './components/responses/NotFound.yaml'
     BadRequest:
       $ref: './components/responses/BadRequest.yaml'
+    Conflict:
+      $ref: './components/responses/Conflict.yaml'

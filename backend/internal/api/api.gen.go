@@ -40,19 +40,40 @@ func (e MultiQuizExerciseType) Valid() bool {
 
 // Defines values for PracticeStatus.
 const (
-	Completed  PracticeStatus = "completed"
-	InProgress PracticeStatus = "in_progress"
-	Pending    PracticeStatus = "pending"
+	PracticeStatusCompleted  PracticeStatus = "completed"
+	PracticeStatusInProgress PracticeStatus = "in_progress"
+	PracticeStatusPending    PracticeStatus = "pending"
 )
 
 // Valid indicates whether the value is a known member of the PracticeStatus enum.
 func (e PracticeStatus) Valid() bool {
 	switch e {
-	case Completed:
+	case PracticeStatusCompleted:
 		return true
-	case InProgress:
+	case PracticeStatusInProgress:
 		return true
-	case Pending:
+	case PracticeStatusPending:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for ListPracticesParamsStatus.
+const (
+	ListPracticesParamsStatusCompleted  ListPracticesParamsStatus = "completed"
+	ListPracticesParamsStatusInProgress ListPracticesParamsStatus = "in_progress"
+	ListPracticesParamsStatusPending    ListPracticesParamsStatus = "pending"
+)
+
+// Valid indicates whether the value is a known member of the ListPracticesParamsStatus enum.
+func (e ListPracticesParamsStatus) Valid() bool {
+	switch e {
+	case ListPracticesParamsStatusCompleted:
+		return true
+	case ListPracticesParamsStatusInProgress:
+		return true
+	case ListPracticesParamsStatusPending:
 		return true
 	default:
 		return false
@@ -86,6 +107,12 @@ type ListNotesResponse struct {
 	Limit int    `json:"limit"`
 	Page  int    `json:"page"`
 	Total int    `json:"total"`
+}
+
+// ListPracticesResponse defines model for ListPracticesResponse.
+type ListPracticesResponse struct {
+	Items []Practice `json:"items"`
+	Total int        `json:"total"`
 }
 
 // LoginRequest defines model for LoginRequest.
@@ -148,11 +175,25 @@ type UpdateNoteRequest struct {
 	Title   *string `json:"title,omitempty"`
 }
 
+// Conflict defines model for Conflict.
+type Conflict = CreatePracticeResponse
+
 // ListNotesParams defines parameters for ListNotes.
 type ListNotesParams struct {
 	Page  *int `form:"page,omitempty" json:"page,omitempty"`
 	Limit *int `form:"limit,omitempty" json:"limit,omitempty"`
 }
+
+// ListPracticesParams defines parameters for ListPractices.
+type ListPracticesParams struct {
+	NoteId *openapi_types.UUID          `form:"noteId,omitempty" json:"noteId,omitempty"`
+	Status *[]ListPracticesParamsStatus `form:"status,omitempty" json:"status,omitempty"`
+	Limit  *int                         `form:"limit,omitempty" json:"limit,omitempty"`
+	Page   *int                         `form:"page,omitempty" json:"page,omitempty"`
+}
+
+// ListPracticesParamsStatus defines parameters for ListPractices.
+type ListPracticesParamsStatus string
 
 // LoginJSONRequestBody defines body for Login for application/json ContentType.
 type LoginJSONRequestBody = LoginRequest
@@ -252,6 +293,9 @@ type ServerInterface interface {
 	// (PATCH /notes/{id})
 	UpdateNote(w http.ResponseWriter, r *http.Request, id openapi_types.UUID)
 
+	// (GET /practices)
+	ListPractices(w http.ResponseWriter, r *http.Request, params ListPracticesParams)
+
 	// (POST /practices)
 	CreatePractice(w http.ResponseWriter, r *http.Request)
 
@@ -300,6 +344,11 @@ func (_ Unimplemented) GetNote(w http.ResponseWriter, r *http.Request, id openap
 
 // (PATCH /notes/{id})
 func (_ Unimplemented) UpdateNote(w http.ResponseWriter, r *http.Request, id openapi_types.UUID) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// (GET /practices)
+func (_ Unimplemented) ListPractices(w http.ResponseWriter, r *http.Request, params ListPracticesParams) {
 	w.WriteHeader(http.StatusNotImplemented)
 }
 
@@ -502,6 +551,78 @@ func (siw *ServerInterfaceWrapper) UpdateNote(w http.ResponseWriter, r *http.Req
 	handler.ServeHTTP(w, r)
 }
 
+// ListPractices operation middleware
+func (siw *ServerInterfaceWrapper) ListPractices(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params ListPracticesParams
+
+	// ------------- Optional query parameter "noteId" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, false, "noteId", r.URL.Query(), &params.NoteId, runtime.BindQueryParameterOptions{Type: "string", Format: "uuid"})
+	if err != nil {
+		var requiredError *runtime.RequiredParameterError
+		if errors.As(err, &requiredError) {
+			siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "noteId"})
+		} else {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "noteId", Err: err})
+		}
+		return
+	}
+
+	// ------------- Optional query parameter "status" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", false, false, "status", r.URL.Query(), &params.Status, runtime.BindQueryParameterOptions{Type: "array", Format: ""})
+	if err != nil {
+		var requiredError *runtime.RequiredParameterError
+		if errors.As(err, &requiredError) {
+			siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "status"})
+		} else {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "status", Err: err})
+		}
+		return
+	}
+
+	// ------------- Optional query parameter "limit" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, false, "limit", r.URL.Query(), &params.Limit, runtime.BindQueryParameterOptions{Type: "integer", Format: ""})
+	if err != nil {
+		var requiredError *runtime.RequiredParameterError
+		if errors.As(err, &requiredError) {
+			siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "limit"})
+		} else {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "limit", Err: err})
+		}
+		return
+	}
+
+	// ------------- Optional query parameter "page" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, false, "page", r.URL.Query(), &params.Page, runtime.BindQueryParameterOptions{Type: "integer", Format: ""})
+	if err != nil {
+		var requiredError *runtime.RequiredParameterError
+		if errors.As(err, &requiredError) {
+			siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "page"})
+		} else {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "page", Err: err})
+		}
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.ListPractices(w, r, params)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
 // CreatePractice operation middleware
 func (siw *ServerInterfaceWrapper) CreatePractice(w http.ResponseWriter, r *http.Request) {
 
@@ -680,6 +801,9 @@ func HandlerWithOptions(si ServerInterface, options ChiServerOptions) http.Handl
 		r.Patch(options.BaseURL+"/notes/{id}", wrapper.UpdateNote)
 	})
 	r.Group(func(r chi.Router) {
+		r.Get(options.BaseURL+"/practices", wrapper.ListPractices)
+	})
+	r.Group(func(r chi.Router) {
 		r.Post(options.BaseURL+"/practices", wrapper.CreatePractice)
 	})
 	r.Group(func(r chi.Router) {
@@ -691,6 +815,8 @@ func HandlerWithOptions(si ServerInterface, options ChiServerOptions) http.Handl
 
 type BadRequestResponse struct {
 }
+
+type ConflictJSONResponse CreatePracticeResponse
 
 type NotFoundResponse struct {
 }
@@ -939,6 +1065,35 @@ func (response UpdateNote404Response) VisitUpdateNoteResponse(w http.ResponseWri
 	return nil
 }
 
+type ListPracticesRequestObject struct {
+	Params ListPracticesParams
+}
+
+type ListPracticesResponseObject interface {
+	VisitListPracticesResponse(w http.ResponseWriter) error
+}
+
+type ListPractices200JSONResponse ListPracticesResponse
+
+func (response ListPractices200JSONResponse) VisitListPracticesResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ListPractices401Response = UnauthorizedResponse
+
+func (response ListPractices401Response) VisitListPracticesResponse(w http.ResponseWriter) error {
+	w.WriteHeader(401)
+	return nil
+}
+
 type CreatePracticeRequestObject struct {
 	Body *CreatePracticeJSONRequestBody
 }
@@ -975,11 +1130,18 @@ func (response CreatePractice401Response) VisitCreatePracticeResponse(w http.Res
 	return nil
 }
 
-type CreatePractice404Response = NotFoundResponse
+type CreatePractice409JSONResponse struct{ ConflictJSONResponse }
 
-func (response CreatePractice404Response) VisitCreatePracticeResponse(w http.ResponseWriter) error {
-	w.WriteHeader(404)
-	return nil
+func (response CreatePractice409JSONResponse) VisitCreatePracticeResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(409)
+	_, err := buf.WriteTo(w)
+	return err
 }
 
 type GetPracticeRequestObject struct {
@@ -1044,6 +1206,9 @@ type StrictServerInterface interface {
 
 	// (PATCH /notes/{id})
 	UpdateNote(ctx context.Context, request UpdateNoteRequestObject) (UpdateNoteResponseObject, error)
+
+	// (GET /practices)
+	ListPractices(ctx context.Context, request ListPracticesRequestObject) (ListPracticesResponseObject, error)
 
 	// (POST /practices)
 	CreatePractice(ctx context.Context, request CreatePracticeRequestObject) (CreatePracticeResponseObject, error)
@@ -1302,6 +1467,32 @@ func (sh *strictHandler) UpdateNote(w http.ResponseWriter, r *http.Request, id o
 	}
 }
 
+// ListPractices operation middleware
+func (sh *strictHandler) ListPractices(w http.ResponseWriter, r *http.Request, params ListPracticesParams) {
+	var request ListPracticesRequestObject
+
+	request.Params = params
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.ListPractices(ctx, request.(ListPracticesRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "ListPractices")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(ListPracticesResponseObject); ok {
+		if err := validResponse.VisitListPracticesResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
 // CreatePractice operation middleware
 func (sh *strictHandler) CreatePractice(w http.ResponseWriter, r *http.Request) {
 	var request CreatePracticeRequestObject
@@ -1364,26 +1555,28 @@ func (sh *strictHandler) GetPractice(w http.ResponseWriter, r *http.Request, id 
 // const string: with thousands of chunks the chained `+` fold is several
 // times slower for the Go compiler than parsing a slice literal.
 var swaggerSpec = []string{
-	"1FhLb9s4EP4rAnePaqy0PfmWdh8INsmmC/RUGAUjjRV2JZIhR20SQ/99MaQiSxZlK147QW+2SM7j++ZF",
-	"rliqSq0kSLRsvmIGrFbSgvvzgWf/wF0FFulfBjY1QqNQks3ZufzOC5FFxm+IblT2wOqYXSn8Q1UyG564",
-	"Uhgt3VIds8+SV3irjHiEka20DhJFyhEyVtcxs+ktlNxZ9tEAR7hSCB0DtVEaDApvfKokgnQL+KCBzZlF",
-	"I2RO2lFgAbRSCnkBMsdbNj+NN/fVMSPvhCETvzSH4lbwoj2gbr5BiiTY23VteIoiHbdNKoRz5/dSmZIj",
-	"m7OqEhnbZUJzbopmT+NQtdhDrQir/P0eTCq8kkwQf6WQHJVxyHKtSRb9rAoUb+4q8cjm7JfZOuBmDaOz",
-	"S9rxqRKPrcg6frL74YqXpNepr2OmJPy9ZPMvK/argeUzJC7qmF0IixQ1dgtACGX/xzY9JMxFlAeHG8Nd",
-	"GhSiFN3YExIhB+P84jmEV1AhL0JLm3w4y572NxKfdIaYulC5kKPRqLm1P5TJgqlSWTDSMbDaESXtzngt",
-	"MWTM5Zbo3ENbUMWA/f3yIGYOMqHk9IhodX9qjobCw/9fMZBVSd50UmQxIRubLV3ztsLQmrIvDEoPQdhL",
-	"EMI97ibXn6WtIbc2wbzreDdBbrt97VZIi8vsbV1l0LLANcFIyOiSm38z9UNGDR4BIFJXr7OvHHu4ZRzh",
-	"DQqXRYMzUzF+6m7DZNbZM5UGidlohD1nekpCuD61qBC2pS4AITsbN09WRcFvyD00FYzjevYMWKEpEtNz",
-	"vNumNqNxIkmTR4CYWeRY2W650CAzWoyZkF+1UbkBax0jDYITq0hjRKuii0UXyhCPnx3Nxx/BNhTTJyGX",
-	"ygn1MthfyvDo7Pqcxew7GOsT8vQkOUl87QLJtWBz9u4kOXnn2hPeOgNnNGTOCuqOznrlvSAfOOU1EeSb",
-	"J/PogcUPNOj2neNaFzSnCiVn36wvRD5UdgVSrzHXfY4owN2HzkT+NkmGpedC5TlkVHdslaZg7bIqCheL",
-	"75PTMQtasbPeKO4Q57mlEKHPbEFfWpxUhVuBovWBye9HTVYVbti8Rb2fCnIIaP4T8BJYGKuD8NSZWRxL",
-	"fW8+VsaAxOKhf2mJaEY5KA2Ur3YUhXa4dSFueAkIxrpRmeKbGp95oKz3A3UzNa4ByGDJqwJdHpZCipKK",
-	"zTonO9NoWKCfP4MS3yYxK/l9IzJJdihYHJHK4RUgwOg1z+kqA1lUCIuRWkayGfT/H5eeQLqJhFNofa89",
-	"UsEZXpwnVZ3TgxngL0xDxN381HQcj3OyG+fOA8XBqGnzbLYSWe2jmHrqkKzf3PeGrFDCUZ9Zp4fruH2g",
-	"u7my60q+mFJXHYre3mxPSOjQ+92H2neecHiPlenXQyt5mRBuX7heDXrNMb0dgr+e114M/8OXr+HQOX1o",
-	"Oj73zc3n5crXIQKG6p1u7mR2fLjrvy8etTttPp++cIcaeUkNTQnNnoinKeifhvk12xvstx1vrHp36P+p",
-	"K3jrxzZSX6uS9+ip6/8CAAD//w==",
+	"1Fndbts2FH4VgdulGjttbua7tPtBsCRLC/SqMApGPHbYSaRCHrVxDAF7iD3hnmQ4lKwfi5JVx07QO0kk",
+	"z893/qk1i3SSagUKLZutmQGbamXBvbzl4gPcZ2CR3gTYyMgUpVZsxi7UVx5LEZhiQ3CrxYrlIXun1SKW",
+	"kTsRaYWg3CNP01hGnA5PvliisGY2uoOE09PPBhZsxn6a1MJMilU7eWeAI9wYHqGM4EMpH8vzPNwSacM6",
+	"+O+ffwMeGLA6MxEEPDbAxSqAB2nRkpDXGn/XmRJdta41Bgu3lIfso+IZ3mkjH6FnK62DQtIMBCORSrFp",
+	"eyH5tUZooJganYJBWSDcQAhXKbAZs2ikWhJ3lBgDrSRSXYJa4h2bnYbb+/KQkQmkIRE/lYfCivC8OqBv",
+	"v0CEzkRbiPbIpjTChdN7oU3Ckc1YlknBdolQnhvDubRlh7Xcg630s/ztAUwkCyZCkv0SqThq45DlaUq0",
+	"6DGLUb66z+RjnyNe0Y73mXysSObhRu7VNU+Ir2Ofh0wr+GvBZp+GXdtDcZ6H7FJaJK+xAwAhJO2HIT5E",
+	"zHlUAQ43hrtYjWUim74nFcISjNOLL8G/ghp57FvatoeTbLO/pLjh6bMUqb1xjYOpviHoU38/Tbyi66VU",
+	"vYGUcmu/aSO8UZ5ZMMo5z3qHg1c7w5qiT5irgcDag5uXRcdx9wvhkDnIpFbjLVrxfl8e9ZrWva8ZqCwh",
+	"bRrRPR+RSMotTfEGYahE2RcGnXZB2IsQwgPuNm5xlrb61NoG876h3Qi61fZaLR8Xl5SGCmKn2oJrMgKp",
+	"gitu/hb6mwpKPDxARK7UiM8cW7gJjvAKpYuizpmxGG8KczeYU/GdTL2G2arhLWVaTHy4VhnPg22SxoAg",
+	"zvvFU1kc81tSD00G/biefwesUCaJ8THerLDb3jjSSKO7l5BZ5JjZZrpIQQlaDJlUn1OjlwasdRYpERyZ",
+	"RUohKhZNLJpQ+uz40Zn5+N3jFmP6JNVCO6IFDfanNjw4v7lgIfsKxhYBeXoyPZkWuQsUTyWbsTcn05M3",
+	"rjzhnRNwQv3xJKbq6KTXhRakgxsFyEBF8WQFemDxLQ0ShxoeWoU5b9uIHNx9aEw8r6fTbuq51MslCMo7",
+	"NosisHaRxbHzxbPpaZ8EFdlJa4pwiPOlJRehz2xOXyqcdIaDQNF6R+SzXpF1hlsyD7AvuoIleDj/AXgF",
+	"zI/VQex0NTzYZcaAwnjVnrcC6lEOagaKV9uLQtWXOxc3PAEEY12XT/5Nhc+sKOqLWaBseGsABCx4FqOL",
+	"w0QqmVCyqWOy0X76CRats5fi62nIEv5QkpxOdzCYH9GU3enFY9EbvqQpDEQQS4uBXgSqnFGeZsvCgDRE",
+	"+UOoHsmPlHC6M/+orHN6MAGKWa+LuOufyopT4DzdjXPjAuhgpqnibLKWIi+8mGpq11i/uu+lsXwBR3Wm",
+	"Dg9XcdtAN2Nl123CfExedSgW8oo9IaFDZ7sPVVdUfvfuS9Mvh9b0eVy4upx7MehTjtFdF/y6X3s2/A+f",
+	"vrpN5/im6fi2Lyef50tfh3AYynfp5lprsLeoLr/G9Rf1cDHaa8I1g4c01gLYbMFjC6GXcjWt1JSrse0p",
+	"I1J3mLO4chMGCc6O3/eEh+7Ujt1Ide9DPbFxWbZQtZc9uVjXpHb1UtV1wzH7qe1/Fc/cU43/BbXZE/Ao",
+	"gvTZc9Uvuw9V/+f6zN3KV1WP1tdvNMz/Q/cc9X+CAaO+VO/RMk+e/x8AAP//",
 }
 
 // decodeSpec returns the embedded OpenAPI spec as raw JSON bytes,

@@ -1,28 +1,45 @@
-single:
+collection:
   get:
-    operationId: getPractice
+    operationId: listPractices
     tags:
       - practices
     parameters:
-      - name: id
-        in: path
-        required: true
+      - name: noteId
+        in: query
         schema:
           type: string
           format: uuid
+      - name: status
+        in: query
+        schema:
+          type: array
+          items:
+            type: string
+            enum: [pending, in_progress, completed]
+        style: form
+        explode: false
+      - name: limit
+        in: query
+        schema:
+          type: integer
+          default: 20
+          minimum: 1
+          maximum: 100
+      - name: page
+        in: query
+        schema:
+          type: integer
+          default: 1
+          minimum: 1
     responses:
       "200":
-        description: Practice found
+        description: List of practices
         content:
           application/json:
             schema:
-              $ref: '../components/schemas/Practice.yaml'
+              $ref: '../components/schemas/ListPracticesResponse.yaml'
       "401":
         $ref: '../components/responses/Unauthorized.yaml'
-      "404":
-        $ref: '../components/responses/NotFound.yaml'
-
-collection:
   post:
     operationId: createPractice
     tags:
@@ -42,6 +59,30 @@ collection:
               $ref: '../components/schemas/CreatePracticeResponse.yaml'
       "400":
         $ref: '../components/responses/BadRequest.yaml'
+      "401":
+        $ref: '../components/responses/Unauthorized.yaml'
+      "409":
+        $ref: '../components/responses/Conflict.yaml'
+
+single:
+  get:
+    operationId: getPractice
+    tags:
+      - practices
+    parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+    responses:
+      "200":
+        description: Practice found
+        content:
+          application/json:
+            schema:
+              $ref: '../components/schemas/Practice.yaml'
       "401":
         $ref: '../components/responses/Unauthorized.yaml'
       "404":

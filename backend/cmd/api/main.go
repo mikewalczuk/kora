@@ -55,6 +55,9 @@ func (s *server) UpdateNote(ctx context.Context, req api.UpdateNoteRequestObject
 func (s *server) DeleteNote(ctx context.Context, req api.DeleteNoteRequestObject) (api.DeleteNoteResponseObject, error) {
 	return s.notes.DeleteNote(ctx, req)
 }
+func (s *server) ListPractices(ctx context.Context, req api.ListPracticesRequestObject) (api.ListPracticesResponseObject, error) {
+	return s.practices.ListPractices(ctx, req)
+}
 func (s *server) CreatePractice(ctx context.Context, req api.CreatePracticeRequestObject) (api.CreatePracticeResponseObject, error) {
 	return s.practices.CreatePractice(ctx, req)
 }
