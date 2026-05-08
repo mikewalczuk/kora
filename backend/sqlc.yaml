@@ -8,3 +8,6 @@ sql:
         package: "database" # nazwa paczki w Go
         out: "internal/database" # gdzie trafi wygenerowany kod
         sql_package: "pgx/v5" # używamy nowoczesnego drivera pgx
+        overrides:
+          - db_type: "jsonb"
+            go_type: "encoding/json.RawMessage"

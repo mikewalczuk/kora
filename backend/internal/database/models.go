@@ -5,6 +5,8 @@
 package database
 
 import (
+	"encoding/json"
+
 	"github.com/jackc/pgx/v5/pgtype"
 )
 
@@ -15,6 +17,15 @@ type Note struct {
 	Content   string
 	CreatedAt pgtype.Timestamp
 	UpdatedAt pgtype.Timestamp
+}
+
+type Practice struct {
+	ID          pgtype.UUID
+	NoteID      pgtype.UUID
+	Status      string
+	Exercises   json.RawMessage
+	CreatedAt   pgtype.Timestamp
+	CompletedAt pgtype.Timestamp
 }
 
 type User struct {

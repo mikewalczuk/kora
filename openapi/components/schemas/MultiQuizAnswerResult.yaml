@@ -1,0 +1,11 @@
+type: object
+required: [questionId, selectedOptionId, correct]
+properties:
+  questionId:
+    type: string
+    format: uuid
+  selectedOptionId:
+    type: string
+    format: uuid
+  correct:
+    type: boolean

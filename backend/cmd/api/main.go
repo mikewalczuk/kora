@@ -64,6 +64,9 @@ func (s *server) CreatePractice(ctx context.Context, req api.CreatePracticeReque
 func (s *server) GetPractice(ctx context.Context, req api.GetPracticeRequestObject) (api.GetPracticeResponseObject, error) {
 	return s.practices.GetPractice(ctx, req)
 }
+func (s *server) SubmitExercise(ctx context.Context, req api.SubmitExerciseRequestObject) (api.SubmitExerciseResponseObject, error) {
+	return s.practices.SubmitExercise(ctx, req)
+}
 
 func main() {
 	cfg, err := config.Load()
@@ -108,7 +111,7 @@ func main() {
 	srv := &server{
 		auth:      &auth.Handler{Service: authSvc},
 		notes:     &notes.Handler{Service: &notes.Service{DB: db, Auth: authSvc}},
-		practices: &practices.Handler{Service: &practices.Service{Hub: hub}},
+		practices: &practices.Handler{Service: &practices.Service{DB: db, Hub: hub}},
 	}
 
 	r.Group(func(r chi.Router) {

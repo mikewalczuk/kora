@@ -7,9 +7,31 @@ package database
 
 import (
 	"context"
+	"encoding/json"
 
 	"github.com/jackc/pgx/v5/pgtype"
 )
+
+const completePractice = `-- name: CompletePractice :one
+UPDATE practices
+SET status = 'completed', completed_at = (CURRENT_TIMESTAMP AT TIME ZONE 'UTC')
+WHERE id = $1
+RETURNING id, note_id, status, exercises, created_at, completed_at
+`
+
+func (q *Queries) CompletePractice(ctx context.Context, id pgtype.UUID) (Practice, error) {
+	row := q.db.QueryRow(ctx, completePractice, id)
+	var i Practice
+	err := row.Scan(
+		&i.ID,
+		&i.NoteID,
+		&i.Status,
+		&i.Exercises,
+		&i.CreatedAt,
+		&i.CompletedAt,
+	)
+	return i, err
+}
 
 const countNotesByUser = `-- name: CountNotesByUser :one
 SELECT COUNT(*) FROM notes WHERE user_id = $1
@@ -17,6 +39,24 @@ SELECT COUNT(*) FROM notes WHERE user_id = $1
 
 func (q *Queries) CountNotesByUser(ctx context.Context, userID pgtype.UUID) (int64, error) {
 	row := q.db.QueryRow(ctx, countNotesByUser, userID)
+	var count int64
+	err := row.Scan(&count)
+	return count, err
+}
+
+const countPractices = `-- name: CountPractices :one
+SELECT COUNT(*) FROM practices
+WHERE ($1::uuid IS NULL OR note_id = $1)
+  AND (cardinality($2::text[]) = 0 OR status = ANY($2::text[]))
+`
+
+type CountPracticesParams struct {
+	NoteID   pgtype.UUID
+	Statuses []string
+}
+
+func (q *Queries) CountPractices(ctx context.Context, arg CountPracticesParams) (int64, error) {
+	row := q.db.QueryRow(ctx, countPractices, arg.NoteID, arg.Statuses)
 	var count int64
 	err := row.Scan(&count)
 	return count, err
@@ -48,6 +88,32 @@ func (q *Queries) CreateNote(ctx context.Context, arg CreateNoteParams) (Note, e
 	return i, err
 }
 
+const createPractice = `-- name: CreatePractice :one
+INSERT INTO practices (note_id, status, exercises)
+VALUES ($1, $2, $3)
+RETURNING id, note_id, status, exercises, created_at, completed_at
+`
+
+type CreatePracticeParams struct {
+	NoteID    pgtype.UUID
+	Status    string
+	Exercises json.RawMessage
+}
+
+func (q *Queries) CreatePractice(ctx context.Context, arg CreatePracticeParams) (Practice, error) {
+	row := q.db.QueryRow(ctx, createPractice, arg.NoteID, arg.Status, arg.Exercises)
+	var i Practice
+	err := row.Scan(
+		&i.ID,
+		&i.NoteID,
+		&i.Status,
+		&i.Exercises,
+		&i.CreatedAt,
+		&i.CompletedAt,
+	)
+	return i, err
+}
+
 const deleteNote = `-- name: DeleteNote :exec
 DELETE FROM notes WHERE id = $1 AND user_id = $2
 `
@@ -60,6 +126,27 @@ type DeleteNoteParams struct {
 func (q *Queries) DeleteNote(ctx context.Context, arg DeleteNoteParams) error {
 	_, err := q.db.Exec(ctx, deleteNote, arg.ID, arg.UserID)
 	return err
+}
+
+const getActivePracticeForNote = `-- name: GetActivePracticeForNote :one
+SELECT id, note_id, status, exercises, created_at, completed_at FROM practices
+WHERE note_id = $1
+  AND status IN ('pending', 'in_progress')
+LIMIT 1
+`
+
+func (q *Queries) GetActivePracticeForNote(ctx context.Context, noteID pgtype.UUID) (Practice, error) {
+	row := q.db.QueryRow(ctx, getActivePracticeForNote, noteID)
+	var i Practice
+	err := row.Scan(
+		&i.ID,
+		&i.NoteID,
+		&i.Status,
+		&i.Exercises,
+		&i.CreatedAt,
+		&i.CompletedAt,
+	)
+	return i, err
 }
 
 const getNoteByID = `-- name: GetNoteByID :one
@@ -81,6 +168,24 @@ func (q *Queries) GetNoteByID(ctx context.Context, arg GetNoteByIDParams) (Note,
 		&i.Content,
 		&i.CreatedAt,
 		&i.UpdatedAt,
+	)
+	return i, err
+}
+
+const getPractice = `-- name: GetPractice :one
+SELECT id, note_id, status, exercises, created_at, completed_at FROM practices WHERE id = $1
+`
+
+func (q *Queries) GetPractice(ctx context.Context, id pgtype.UUID) (Practice, error) {
+	row := q.db.QueryRow(ctx, getPractice, id)
+	var i Practice
+	err := row.Scan(
+		&i.ID,
+		&i.NoteID,
+		&i.Status,
+		&i.Exercises,
+		&i.CreatedAt,
+		&i.CompletedAt,
 	)
 	return i, err
 }
@@ -142,6 +247,54 @@ func (q *Queries) ListNotesByUser(ctx context.Context, arg ListNotesByUserParams
 	return items, nil
 }
 
+const listPractices = `-- name: ListPractices :many
+SELECT id, note_id, status, exercises, created_at, completed_at FROM practices
+WHERE ($1::uuid IS NULL OR note_id = $1)
+  AND (cardinality($2::text[]) = 0 OR status = ANY($2::text[]))
+ORDER BY created_at DESC
+LIMIT $4
+OFFSET $3
+`
+
+type ListPracticesParams struct {
+	NoteID   pgtype.UUID
+	Statuses []string
+	Off      int32
+	Lim      int32
+}
+
+func (q *Queries) ListPractices(ctx context.Context, arg ListPracticesParams) ([]Practice, error) {
+	rows, err := q.db.Query(ctx, listPractices,
+		arg.NoteID,
+		arg.Statuses,
+		arg.Off,
+		arg.Lim,
+	)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []Practice
+	for rows.Next() {
+		var i Practice
+		if err := rows.Scan(
+			&i.ID,
+			&i.NoteID,
+			&i.Status,
+			&i.Exercises,
+			&i.CreatedAt,
+			&i.CompletedAt,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const updateNote = `-- name: UpdateNote :one
 UPDATE notes
 SET
@@ -174,6 +327,29 @@ func (q *Queries) UpdateNote(ctx context.Context, arg UpdateNoteParams) (Note, e
 		&i.Content,
 		&i.CreatedAt,
 		&i.UpdatedAt,
+	)
+	return i, err
+}
+
+const updatePracticeExercises = `-- name: UpdatePracticeExercises :one
+UPDATE practices SET exercises = $1 WHERE id = $2 RETURNING id, note_id, status, exercises, created_at, completed_at
+`
+
+type UpdatePracticeExercisesParams struct {
+	Exercises json.RawMessage
+	ID        pgtype.UUID
+}
+
+func (q *Queries) UpdatePracticeExercises(ctx context.Context, arg UpdatePracticeExercisesParams) (Practice, error) {
+	row := q.db.QueryRow(ctx, updatePracticeExercises, arg.Exercises, arg.ID)
+	var i Practice
+	err := row.Scan(
+		&i.ID,
+		&i.NoteID,
+		&i.Status,
+		&i.Exercises,
+		&i.CreatedAt,
+		&i.CompletedAt,
 	)
 	return i, err
 }

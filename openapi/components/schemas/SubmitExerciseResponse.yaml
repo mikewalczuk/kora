@@ -1,0 +1,6 @@
+oneOf:
+  - $ref: './MultiQuizExerciseResult.yaml'
+discriminator:
+  propertyName: type
+  mapping:
+    multi-quiz: './MultiQuizExerciseResult.yaml'

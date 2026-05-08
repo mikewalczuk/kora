@@ -17,6 +17,8 @@ paths:
     $ref: './paths/practices.yaml#/collection'
   /practices/{id}:
     $ref: './paths/practices.yaml#/single'
+  /practices/{id}/exercises/{exerciseId}:
+    $ref: './paths/practices.yaml#/exercise'
 components:
   schemas:
     LoginRequest:
@@ -49,6 +51,14 @@ components:
       $ref: './components/schemas/ServerEvent.yaml'
     PracticeReadyEvent:
       $ref: './components/schemas/PracticeReadyEvent.yaml'
+    SubmitExerciseRequest:
+      $ref: './components/schemas/SubmitExerciseRequest.yaml'
+    MultiQuizSubmission:
+      $ref: './components/schemas/MultiQuizSubmission.yaml'
+    SubmitExerciseResponse:
+      $ref: './components/schemas/SubmitExerciseResponse.yaml'
+    MultiQuizExerciseResult:
+      $ref: './components/schemas/MultiQuizExerciseResult.yaml'
   responses:
     Unauthorized:
       $ref: './components/responses/Unauthorized.yaml'

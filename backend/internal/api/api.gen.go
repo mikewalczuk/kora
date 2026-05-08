@@ -25,13 +25,58 @@ import (
 
 // Defines values for MultiQuizExerciseType.
 const (
-	MultiQuiz MultiQuizExerciseType = "multi-quiz"
+	MultiQuizExerciseTypeMultiQuiz MultiQuizExerciseType = "multi-quiz"
 )
 
 // Valid indicates whether the value is a known member of the MultiQuizExerciseType enum.
 func (e MultiQuizExerciseType) Valid() bool {
 	switch e {
-	case MultiQuiz:
+	case MultiQuizExerciseTypeMultiQuiz:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for MultiQuizExerciseResultType.
+const (
+	MultiQuizExerciseResultTypeMultiQuiz MultiQuizExerciseResultType = "multi-quiz"
+)
+
+// Valid indicates whether the value is a known member of the MultiQuizExerciseResultType enum.
+func (e MultiQuizExerciseResultType) Valid() bool {
+	switch e {
+	case MultiQuizExerciseResultTypeMultiQuiz:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for MultiQuizQuestionSubmissionType.
+const (
+	MultiQuizQuestionSubmissionTypeMultiQuiz MultiQuizQuestionSubmissionType = "multi-quiz"
+)
+
+// Valid indicates whether the value is a known member of the MultiQuizQuestionSubmissionType enum.
+func (e MultiQuizQuestionSubmissionType) Valid() bool {
+	switch e {
+	case MultiQuizQuestionSubmissionTypeMultiQuiz:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for MultiQuizSubmissionType.
+const (
+	MultiQuizSubmissionTypeMultiQuiz MultiQuizSubmissionType = "multi-quiz"
+)
+
+// Valid indicates whether the value is a known member of the MultiQuizSubmissionType enum.
+func (e MultiQuizSubmissionType) Valid() bool {
+	switch e {
+	case MultiQuizSubmissionTypeMultiQuiz:
 		return true
 	default:
 		return false
@@ -136,6 +181,17 @@ type MultiQuizExercise struct {
 // MultiQuizExerciseType defines model for MultiQuizExercise.Type.
 type MultiQuizExerciseType string
 
+// MultiQuizExerciseResult defines model for MultiQuizExerciseResult.
+type MultiQuizExerciseResult struct {
+	Correct          bool                        `json:"correct"`
+	QuestionId       openapi_types.UUID          `json:"questionId"`
+	SelectedOptionId openapi_types.UUID          `json:"selectedOptionId"`
+	Type             MultiQuizExerciseResultType `json:"type"`
+}
+
+// MultiQuizExerciseResultType defines model for MultiQuizExerciseResult.Type.
+type MultiQuizExerciseResultType string
+
 // MultiQuizQuestion defines model for MultiQuizQuestion.
 type MultiQuizQuestion struct {
 	Id      openapi_types.UUID `json:"id"`
@@ -143,8 +199,26 @@ type MultiQuizQuestion struct {
 		Id   openapi_types.UUID `json:"id"`
 		Text string             `json:"text"`
 	} `json:"options"`
-	Question string `json:"question"`
+	Question   string `json:"question"`
+	Submission *struct {
+		Correct          bool                            `json:"correct"`
+		SelectedOptionId openapi_types.UUID              `json:"selectedOptionId"`
+		Type             MultiQuizQuestionSubmissionType `json:"type"`
+	} `json:"submission,omitempty"`
 }
+
+// MultiQuizQuestionSubmissionType defines model for MultiQuizQuestion.Submission.Type.
+type MultiQuizQuestionSubmissionType string
+
+// MultiQuizSubmission defines model for MultiQuizSubmission.
+type MultiQuizSubmission struct {
+	QuestionId       openapi_types.UUID      `json:"questionId"`
+	SelectedOptionId openapi_types.UUID      `json:"selectedOptionId"`
+	Type             MultiQuizSubmissionType `json:"type"`
+}
+
+// MultiQuizSubmissionType defines model for MultiQuizSubmission.Type.
+type MultiQuizSubmissionType string
 
 // Note defines model for Note.
 type Note struct {
@@ -168,6 +242,16 @@ type Practice struct {
 
 // PracticeStatus defines model for Practice.Status.
 type PracticeStatus string
+
+// SubmitExerciseRequest defines model for SubmitExerciseRequest.
+type SubmitExerciseRequest struct {
+	union json.RawMessage
+}
+
+// SubmitExerciseResponse defines model for SubmitExerciseResponse.
+type SubmitExerciseResponse struct {
+	union json.RawMessage
+}
 
 // UpdateNoteRequest defines model for UpdateNoteRequest.
 type UpdateNoteRequest struct {
@@ -206,6 +290,9 @@ type UpdateNoteJSONRequestBody = UpdateNoteRequest
 
 // CreatePracticeJSONRequestBody defines body for CreatePractice for application/json ContentType.
 type CreatePracticeJSONRequestBody = CreatePracticeRequest
+
+// SubmitExerciseJSONRequestBody defines body for SubmitExercise for application/json ContentType.
+type SubmitExerciseJSONRequestBody = SubmitExerciseRequest
 
 // AsMultiQuizExercise returns the union data inside the Exercise as a MultiQuizExercise
 func (t Exercise) AsMultiQuizExercise() (MultiQuizExercise, error) {
@@ -266,6 +353,124 @@ func (t *Exercise) UnmarshalJSON(b []byte) error {
 	return err
 }
 
+// AsMultiQuizSubmission returns the union data inside the SubmitExerciseRequest as a MultiQuizSubmission
+func (t SubmitExerciseRequest) AsMultiQuizSubmission() (MultiQuizSubmission, error) {
+	var body MultiQuizSubmission
+	err := json.Unmarshal(t.union, &body)
+	return body, err
+}
+
+// FromMultiQuizSubmission overwrites any union data inside the SubmitExerciseRequest as the provided MultiQuizSubmission
+func (t *SubmitExerciseRequest) FromMultiQuizSubmission(v MultiQuizSubmission) error {
+	v.Type = "multi-quiz"
+	b, err := json.Marshal(v)
+	t.union = b
+	return err
+}
+
+// MergeMultiQuizSubmission performs a merge with any union data inside the SubmitExerciseRequest, using the provided MultiQuizSubmission
+func (t *SubmitExerciseRequest) MergeMultiQuizSubmission(v MultiQuizSubmission) error {
+	v.Type = "multi-quiz"
+	b, err := json.Marshal(v)
+	if err != nil {
+		return err
+	}
+
+	merged, err := runtime.JSONMerge(t.union, b)
+	t.union = merged
+	return err
+}
+
+func (t SubmitExerciseRequest) Discriminator() (string, error) {
+	var discriminator struct {
+		Discriminator string `json:"type"`
+	}
+	err := json.Unmarshal(t.union, &discriminator)
+	return discriminator.Discriminator, err
+}
+
+func (t SubmitExerciseRequest) ValueByDiscriminator() (interface{}, error) {
+	discriminator, err := t.Discriminator()
+	if err != nil {
+		return nil, err
+	}
+	switch discriminator {
+	case "multi-quiz":
+		return t.AsMultiQuizSubmission()
+	default:
+		return nil, errors.New("unknown discriminator value: " + discriminator)
+	}
+}
+
+func (t SubmitExerciseRequest) MarshalJSON() ([]byte, error) {
+	b, err := t.union.MarshalJSON()
+	return b, err
+}
+
+func (t *SubmitExerciseRequest) UnmarshalJSON(b []byte) error {
+	err := t.union.UnmarshalJSON(b)
+	return err
+}
+
+// AsMultiQuizExerciseResult returns the union data inside the SubmitExerciseResponse as a MultiQuizExerciseResult
+func (t SubmitExerciseResponse) AsMultiQuizExerciseResult() (MultiQuizExerciseResult, error) {
+	var body MultiQuizExerciseResult
+	err := json.Unmarshal(t.union, &body)
+	return body, err
+}
+
+// FromMultiQuizExerciseResult overwrites any union data inside the SubmitExerciseResponse as the provided MultiQuizExerciseResult
+func (t *SubmitExerciseResponse) FromMultiQuizExerciseResult(v MultiQuizExerciseResult) error {
+	v.Type = "multi-quiz"
+	b, err := json.Marshal(v)
+	t.union = b
+	return err
+}
+
+// MergeMultiQuizExerciseResult performs a merge with any union data inside the SubmitExerciseResponse, using the provided MultiQuizExerciseResult
+func (t *SubmitExerciseResponse) MergeMultiQuizExerciseResult(v MultiQuizExerciseResult) error {
+	v.Type = "multi-quiz"
+	b, err := json.Marshal(v)
+	if err != nil {
+		return err
+	}
+
+	merged, err := runtime.JSONMerge(t.union, b)
+	t.union = merged
+	return err
+}
+
+func (t SubmitExerciseResponse) Discriminator() (string, error) {
+	var discriminator struct {
+		Discriminator string `json:"type"`
+	}
+	err := json.Unmarshal(t.union, &discriminator)
+	return discriminator.Discriminator, err
+}
+
+func (t SubmitExerciseResponse) ValueByDiscriminator() (interface{}, error) {
+	discriminator, err := t.Discriminator()
+	if err != nil {
+		return nil, err
+	}
+	switch discriminator {
+	case "multi-quiz":
+		return t.AsMultiQuizExerciseResult()
+	default:
+		return nil, errors.New("unknown discriminator value: " + discriminator)
+	}
+}
+
+func (t SubmitExerciseResponse) MarshalJSON() ([]byte, error) {
+	b, err := t.union.MarshalJSON()
+	return b, err
+}
+
+func (t *SubmitExerciseResponse) UnmarshalJSON(b []byte) error {
+	err := t.union.UnmarshalJSON(b)
+	return err
+}
+
 // ServerInterface represents all server handlers.
 type ServerInterface interface {
 
@@ -301,6 +506,9 @@ type ServerInterface interface {
 
 	// (GET /practices/{id})
 	GetPractice(w http.ResponseWriter, r *http.Request, id openapi_types.UUID)
+
+	// (PATCH /practices/{id}/exercises/{exerciseId})
+	SubmitExercise(w http.ResponseWriter, r *http.Request, id openapi_types.UUID, exerciseId openapi_types.UUID)
 }
 
 // Unimplemented server implementation that returns http.StatusNotImplemented for each endpoint.
@@ -359,6 +567,11 @@ func (_ Unimplemented) CreatePractice(w http.ResponseWriter, r *http.Request) {
 
 // (GET /practices/{id})
 func (_ Unimplemented) GetPractice(w http.ResponseWriter, r *http.Request, id openapi_types.UUID) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// (PATCH /practices/{id}/exercises/{exerciseId})
+func (_ Unimplemented) SubmitExercise(w http.ResponseWriter, r *http.Request, id openapi_types.UUID, exerciseId openapi_types.UUID) {
 	w.WriteHeader(http.StatusNotImplemented)
 }
 
@@ -663,6 +876,41 @@ func (siw *ServerInterfaceWrapper) GetPractice(w http.ResponseWriter, r *http.Re
 	handler.ServeHTTP(w, r)
 }
 
+// SubmitExercise operation middleware
+func (siw *ServerInterfaceWrapper) SubmitExercise(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "id" -------------
+	var id openapi_types.UUID
+
+	err = runtime.BindStyledParameterWithOptions("simple", "id", chi.URLParam(r, "id"), &id, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid"})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "id", Err: err})
+		return
+	}
+
+	// ------------- Path parameter "exerciseId" -------------
+	var exerciseId openapi_types.UUID
+
+	err = runtime.BindStyledParameterWithOptions("simple", "exerciseId", chi.URLParam(r, "exerciseId"), &exerciseId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid"})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "exerciseId", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.SubmitExercise(w, r, id, exerciseId)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
 type UnescapedCookieParamError struct {
 	ParamName string
 	Err       error
@@ -808,6 +1056,9 @@ func HandlerWithOptions(si ServerInterface, options ChiServerOptions) http.Handl
 	})
 	r.Group(func(r chi.Router) {
 		r.Get(options.BaseURL+"/practices/{id}", wrapper.GetPractice)
+	})
+	r.Group(func(r chi.Router) {
+		r.Patch(options.BaseURL+"/practices/{id}/exercises/{exerciseId}", wrapper.SubmitExercise)
 	})
 
 	return r
@@ -1180,6 +1431,67 @@ func (response GetPractice404Response) VisitGetPracticeResponse(w http.ResponseW
 	return nil
 }
 
+type SubmitExerciseRequestObject struct {
+	Id         openapi_types.UUID `json:"id"`
+	ExerciseId openapi_types.UUID `json:"exerciseId"`
+	Body       *SubmitExerciseJSONRequestBody
+}
+
+type SubmitExerciseResponseObject interface {
+	VisitSubmitExerciseResponse(w http.ResponseWriter) error
+}
+
+type SubmitExercise200JSONResponse SubmitExerciseResponse
+
+func (t SubmitExercise200JSONResponse) MarshalJSON() ([]byte, error) {
+	return SubmitExerciseResponse(t).MarshalJSON()
+}
+
+func (t *SubmitExercise200JSONResponse) UnmarshalJSON(b []byte) error {
+	return (*SubmitExerciseResponse)(t).UnmarshalJSON(b)
+}
+
+func (response SubmitExercise200JSONResponse) VisitSubmitExerciseResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type SubmitExercise400Response = BadRequestResponse
+
+func (response SubmitExercise400Response) VisitSubmitExerciseResponse(w http.ResponseWriter) error {
+	w.WriteHeader(400)
+	return nil
+}
+
+type SubmitExercise401Response = UnauthorizedResponse
+
+func (response SubmitExercise401Response) VisitSubmitExerciseResponse(w http.ResponseWriter) error {
+	w.WriteHeader(401)
+	return nil
+}
+
+type SubmitExercise404Response = NotFoundResponse
+
+func (response SubmitExercise404Response) VisitSubmitExerciseResponse(w http.ResponseWriter) error {
+	w.WriteHeader(404)
+	return nil
+}
+
+type SubmitExercise409Response struct {
+}
+
+func (response SubmitExercise409Response) VisitSubmitExerciseResponse(w http.ResponseWriter) error {
+	w.WriteHeader(409)
+	return nil
+}
+
 // StrictServerInterface represents all server handlers.
 type StrictServerInterface interface {
 
@@ -1215,6 +1527,9 @@ type StrictServerInterface interface {
 
 	// (GET /practices/{id})
 	GetPractice(ctx context.Context, request GetPracticeRequestObject) (GetPracticeResponseObject, error)
+
+	// (PATCH /practices/{id}/exercises/{exerciseId})
+	SubmitExercise(ctx context.Context, request SubmitExerciseRequestObject) (SubmitExerciseResponseObject, error)
 }
 
 type StrictHandlerFunc func(ctx context.Context, w http.ResponseWriter, r *http.Request, request any) (any, error)
@@ -1550,33 +1865,70 @@ func (sh *strictHandler) GetPractice(w http.ResponseWriter, r *http.Request, id 
 	}
 }
 
+// SubmitExercise operation middleware
+func (sh *strictHandler) SubmitExercise(w http.ResponseWriter, r *http.Request, id openapi_types.UUID, exerciseId openapi_types.UUID) {
+	var request SubmitExerciseRequestObject
+
+	request.Id = id
+	request.ExerciseId = exerciseId
+
+	var body SubmitExerciseJSONRequestBody
+	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+		sh.options.RequestErrorHandlerFunc(w, r, fmt.Errorf("can't decode JSON body: %w", err))
+		return
+	}
+	request.Body = &body
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.SubmitExercise(ctx, request.(SubmitExerciseRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "SubmitExercise")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(SubmitExerciseResponseObject); ok {
+		if err := validResponse.VisitSubmitExerciseResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
 // Base64 encoded, compressed with deflate, json marshaled OpenAPI spec.
 // Stored as a slice of fixed-width chunks rather than one concatenated
 // const string: with thousands of chunks the chained `+` fold is several
 // times slower for the Go compiler than parsing a slice literal.
 var swaggerSpec = []string{
-	"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",
+	"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",
 }
 
 // decodeSpec returns the embedded OpenAPI spec as raw JSON bytes,

@@ -15,7 +15,10 @@ export function Toaster() {
   useEffect(() => {
     return on((event: ServerEvent) => {
       if (event.type !== "practice_ready") return;
-      const toast: Toast = { id: crypto.randomUUID(), practiceId: event.practiceId };
+      const toast: Toast = {
+        id: crypto.randomUUID(),
+        practiceId: event.practiceId,
+      };
       setToasts((prev) => [...prev, toast]);
       setTimeout(() => {
         setToasts((prev) => prev.filter((t) => t.id !== toast.id));

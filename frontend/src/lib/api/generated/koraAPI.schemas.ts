@@ -70,10 +70,21 @@ export type MultiQuizQuestionOptionsItem = {
   text: string;
 };
 
+/**
+ * @nullable
+ */
+export type MultiQuizQuestionSubmission = {
+  type: 'multi-quiz';
+  selectedOptionId: string;
+  correct: boolean;
+} | null;
+
 export interface MultiQuizQuestion {
   id: string;
   question: string;
   options: MultiQuizQuestionOptionsItem[];
+  /** @nullable */
+  submission?: MultiQuizQuestionSubmission;
 }
 
 export interface MultiQuizExercise {
@@ -112,6 +123,37 @@ export interface PracticeReadyEvent {
 }
 
 export type ServerEvent = PracticeReadyEvent;
+
+export type MultiQuizSubmissionType = typeof MultiQuizSubmissionType[keyof typeof MultiQuizSubmissionType];
+
+
+export const MultiQuizSubmissionType = {
+  'multi-quiz': 'multi-quiz',
+} as const;
+
+export interface MultiQuizSubmission {
+  type: MultiQuizSubmissionType;
+  questionId: string;
+  selectedOptionId: string;
+}
+
+export type SubmitExerciseRequest = MultiQuizSubmission;
+
+export type MultiQuizExerciseResultType = typeof MultiQuizExerciseResultType[keyof typeof MultiQuizExerciseResultType];
+
+
+export const MultiQuizExerciseResultType = {
+  'multi-quiz': 'multi-quiz',
+} as const;
+
+export interface MultiQuizExerciseResult {
+  type: MultiQuizExerciseResultType;
+  questionId: string;
+  selectedOptionId: string;
+  correct: boolean;
+}
+
+export type SubmitExerciseResponse = MultiQuizExerciseResult;
 
 /**
  * Not authenticated

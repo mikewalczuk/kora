@@ -64,6 +64,46 @@ collection:
       "409":
         $ref: '../components/responses/Conflict.yaml'
 
+exercise:
+  patch:
+    operationId: submitExercise
+    tags:
+      - practices
+    parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      - name: exerciseId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            $ref: '../components/schemas/SubmitExerciseRequest.yaml'
+    responses:
+      "200":
+        description: Exercise submitted
+        content:
+          application/json:
+            schema:
+              $ref: '../components/schemas/SubmitExerciseResponse.yaml'
+      "400":
+        $ref: '../components/responses/BadRequest.yaml'
+      "401":
+        $ref: '../components/responses/Unauthorized.yaml'
+      "404":
+        $ref: '../components/responses/NotFound.yaml'
+      "409":
+        description: Question already answered
+
 single:
   get:
     operationId: getPractice

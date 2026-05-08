@@ -1,0 +1,14 @@
+type: object
+required: [type, questionId, selectedOptionId, correct]
+properties:
+  type:
+    type: string
+    enum: [multi-quiz]
+  questionId:
+    type: string
+    format: uuid
+  selectedOptionId:
+    type: string
+    format: uuid
+  correct:
+    type: boolean

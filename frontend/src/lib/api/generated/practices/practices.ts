@@ -32,6 +32,8 @@ import type {
   ListPracticesResponse,
   NotFoundResponse,
   Practice,
+  SubmitExerciseRequest,
+  SubmitExerciseResponse,
   UnauthorizedResponse
 } from '../koraAPI.schemas';
 
@@ -373,3 +375,99 @@ export function useGetPractice<TData = Awaited<ReturnType<typeof getPractice>>, 
 
 
 
+export type submitExerciseResponse200 = {
+  data: SubmitExerciseResponse
+  status: 200
+}
+
+export type submitExerciseResponse400 = {
+  data: BadRequestResponse
+  status: 400
+}
+
+export type submitExerciseResponse401 = {
+  data: UnauthorizedResponse
+  status: 401
+}
+
+export type submitExerciseResponse404 = {
+  data: NotFoundResponse
+  status: 404
+}
+
+export type submitExerciseResponseSuccess = (submitExerciseResponse200) & {
+  headers: Headers;
+};
+export type submitExerciseResponseError = (submitExerciseResponse400 | submitExerciseResponse401 | submitExerciseResponse404) & {
+  headers: Headers;
+};
+
+export type submitExerciseResponse = (submitExerciseResponseSuccess | submitExerciseResponseError)
+
+export const getSubmitExerciseUrl = (id: string,
+    exerciseId: string,) => {
+
+
+
+
+  return `/practices/${id}/exercises/${exerciseId}`
+}
+
+export const submitExercise = async (id: string,
+    exerciseId: string,
+    submitExerciseRequest: SubmitExerciseRequest, options?: RequestInit): Promise<submitExerciseResponse> => {
+
+  return customFetch<submitExerciseResponse>(getSubmitExerciseUrl(id,exerciseId),
+  {
+    ...options,
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(
+      submitExerciseRequest,)
+  }
+);}
+
+
+
+
+export const getSubmitExerciseMutationOptions = <TError = BadRequestResponse | UnauthorizedResponse | NotFoundResponse,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof submitExercise>>, TError,{id: string;exerciseId: string;data: SubmitExerciseRequest}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof submitExercise>>, TError,{id: string;exerciseId: string;data: SubmitExerciseRequest}, TContext> => {
+
+const mutationKey = ['submitExercise'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof submitExercise>>, {id: string;exerciseId: string;data: SubmitExerciseRequest}> = (props) => {
+          const {id,exerciseId,data} = props ?? {};
+
+          return  submitExercise(id,exerciseId,data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type SubmitExerciseMutationResult = NonNullable<Awaited<ReturnType<typeof submitExercise>>>
+    export type SubmitExerciseMutationBody = SubmitExerciseRequest
+    export type SubmitExerciseMutationError = BadRequestResponse | UnauthorizedResponse | NotFoundResponse
+
+    export const useSubmitExercise = <TError = BadRequestResponse | UnauthorizedResponse | NotFoundResponse,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof submitExercise>>, TError,{id: string;exerciseId: string;data: SubmitExerciseRequest}, TContext>, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof submitExercise>>,
+        TError,
+        {id: string;exerciseId: string;data: SubmitExerciseRequest},
+        TContext
+      > => {
+      return useMutation(getSubmitExerciseMutationOptions(options), queryClient);
+    }

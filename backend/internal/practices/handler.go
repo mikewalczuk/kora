@@ -55,3 +55,17 @@ func (h *Handler) GetPractice(ctx context.Context, req api.GetPracticeRequestObj
 	}
 	return api.GetPractice200JSONResponse(practice), nil
 }
+
+func (h *Handler) SubmitExercise(ctx context.Context, req api.SubmitExerciseRequestObject) (api.SubmitExerciseResponseObject, error) {
+	result, err := h.Service.Submit(ctx, req.Id, req.ExerciseId, req.Body)
+	if errors.Is(err, ErrNotFound) {
+		return api.SubmitExercise404Response{}, nil
+	}
+	if errors.Is(err, ErrConflict) {
+		return api.SubmitExercise409Response{}, nil
+	}
+	if err != nil {
+		return api.SubmitExercise401Response{}, nil
+	}
+	return api.SubmitExercise200JSONResponse(result), nil
+}

@@ -17,3 +17,16 @@ properties:
           format: uuid
         text:
           type: string
+  submission:
+    nullable: true
+    type: object
+    required: [type, selectedOptionId, correct]
+    properties:
+      type:
+        type: string
+        enum: [multi-quiz]
+      selectedOptionId:
+        type: string
+        format: uuid
+      correct:
+        type: boolean
